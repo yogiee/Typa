@@ -1,0 +1,453 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10001 /* TextPadApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10001 /* TextPadApp.swift */; };
+		A10002 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10002 /* AppState.swift */; };
+		A10003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10003 /* ContentView.swift */; };
+		A10004 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10004 /* Assets.xcassets */; };
+		A20001 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20001 /* DesignTokens.swift */; };
+		A20002 /* MarkdownEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20002 /* MarkdownEngine.swift */; };
+		A20003 /* SyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20003 /* SyntaxHighlighter.swift */; };
+		A20004 /* AppCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20004 /* AppCommands.swift */; };
+		A20005 /* WindowConfigurator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20005 /* WindowConfigurator.swift */; };
+		A20006 /* TitleBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20006 /* TitleBarView.swift */; };
+		A20007 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20007 /* SidebarView.swift */; };
+		A20008 /* StatusBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20008 /* StatusBarView.swift */; };
+		A20009 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20009 /* EmptyStateView.swift */; };
+		A20010 /* PlainTextEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20010 /* PlainTextEditorView.swift */; };
+		A20011 /* MarkdownReadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20011 /* MarkdownReadView.swift */; };
+		A20012 /* MarkdownSplitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20012 /* MarkdownSplitView.swift */; };
+		A20013 /* CodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20013 /* CodeView.swift */; };
+		A20014 /* RTFView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20014 /* RTFView.swift */; };
+		A20015 /* FindBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20015 /* FindBarView.swift */; };
+		A20016 /* QuickSwitcherView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20016 /* QuickSwitcherView.swift */; };
+		A20017 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20017 /* SettingsView.swift */; };
+		A20018 /* SyncedPreviewScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20018 /* SyncedPreviewScrollView.swift */; };
+		A20019 /* MarkdownHTML.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20019 /* MarkdownHTML.swift */; };
+		A20020 /* MarkdownWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20020 /* MarkdownWebView.swift */; };
+		A20021 /* MdEdit.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20021 /* MdEdit.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B10001 /* TextPadApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextPadApp.swift; sourceTree = "<group>"; };
+		B10002 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		B10003 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B10004 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B10005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B10006 /* TextPad-NXG.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "TextPad-NXG.entitlements"; sourceTree = "<group>"; };
+		B10099 /* TextPad-NXG.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TextPad-NXG.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B20001 /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
+		B20002 /* MarkdownEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownEngine.swift; sourceTree = "<group>"; };
+		B20003 /* SyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxHighlighter.swift; sourceTree = "<group>"; };
+		B20004 /* AppCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCommands.swift; sourceTree = "<group>"; };
+		B20005 /* WindowConfigurator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowConfigurator.swift; sourceTree = "<group>"; };
+		B20006 /* TitleBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleBarView.swift; sourceTree = "<group>"; };
+		B20007 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		B20008 /* StatusBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarView.swift; sourceTree = "<group>"; };
+		B20009 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		B20010 /* PlainTextEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlainTextEditorView.swift; sourceTree = "<group>"; };
+		B20011 /* MarkdownReadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownReadView.swift; sourceTree = "<group>"; };
+		B20012 /* MarkdownSplitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownSplitView.swift; sourceTree = "<group>"; };
+		B20013 /* CodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeView.swift; sourceTree = "<group>"; };
+		B20014 /* RTFView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTFView.swift; sourceTree = "<group>"; };
+		B20015 /* FindBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindBarView.swift; sourceTree = "<group>"; };
+		B20016 /* QuickSwitcherView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSwitcherView.swift; sourceTree = "<group>"; };
+		B20017 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B20018 /* SyncedPreviewScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncedPreviewScrollView.swift; sourceTree = "<group>"; };
+		B20019 /* MarkdownHTML.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownHTML.swift; sourceTree = "<group>"; };
+		B20020 /* MarkdownWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownWebView.swift; sourceTree = "<group>"; };
+		B20021 /* MdEdit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MdEdit.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C10001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D10001 = {
+			isa = PBXGroup;
+			children = (
+				D10002 /* TextPad-NXG */,
+				D10099 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D10002 /* TextPad-NXG */ = {
+			isa = PBXGroup;
+			children = (
+				D10003 /* App */,
+				D20001 /* Core */,
+				D10004 /* Views */,
+				D20002 /* Utilities */,
+				D10005 /* Resources */,
+				B10006 /* TextPad-NXG.entitlements */,
+			);
+			path = "TextPad-NXG";
+			sourceTree = "<group>";
+		};
+		D10003 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				B10001 /* TextPadApp.swift */,
+				B10002 /* AppState.swift */,
+				B20004 /* AppCommands.swift */,
+				B10005 /* Info.plist */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		D10004 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B10003 /* ContentView.swift */,
+				B20006 /* TitleBarView.swift */,
+				B20007 /* SidebarView.swift */,
+				B20008 /* StatusBarView.swift */,
+				B20009 /* EmptyStateView.swift */,
+				B20010 /* PlainTextEditorView.swift */,
+				B20011 /* MarkdownReadView.swift */,
+				B20012 /* MarkdownSplitView.swift */,
+				B20013 /* CodeView.swift */,
+				B20014 /* RTFView.swift */,
+				B20015 /* FindBarView.swift */,
+				B20016 /* QuickSwitcherView.swift */,
+				B20017 /* SettingsView.swift */,
+				B20018 /* SyncedPreviewScrollView.swift */,
+				B20020 /* MarkdownWebView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		D10005 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				B10004 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		D10099 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B10099 /* TextPad-NXG.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D20001 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				B20001 /* DesignTokens.swift */,
+				B20002 /* MarkdownEngine.swift */,
+				B20003 /* SyntaxHighlighter.swift */,
+				B20019 /* MarkdownHTML.swift */,
+				B20021 /* MdEdit.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		D20002 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				B20005 /* WindowConfigurator.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E10001 /* TextPad-NXG */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F10003 /* Build configuration list for PBXNativeTarget "TextPad-NXG" */;
+			buildPhases = (
+				C10002 /* Sources */,
+				C10001 /* Frameworks */,
+				C10003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "TextPad-NXG";
+			productName = "TextPad-NXG";
+			productReference = B10099 /* TextPad-NXG.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E10099 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 2630;
+				TargetAttributes = {
+					E10001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = F10001 /* Build configuration list for PBXProject "TextPad-NXG" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D10001;
+			productRefGroup = D10099 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E10001 /* TextPad-NXG */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C10003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10004 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C10002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10001 /* TextPadApp.swift in Sources */,
+				A10002 /* AppState.swift in Sources */,
+				A10003 /* ContentView.swift in Sources */,
+				A20001 /* DesignTokens.swift in Sources */,
+				A20002 /* MarkdownEngine.swift in Sources */,
+				A20003 /* SyntaxHighlighter.swift in Sources */,
+				A20004 /* AppCommands.swift in Sources */,
+				A20005 /* WindowConfigurator.swift in Sources */,
+				A20006 /* TitleBarView.swift in Sources */,
+				A20007 /* SidebarView.swift in Sources */,
+				A20008 /* StatusBarView.swift in Sources */,
+				A20009 /* EmptyStateView.swift in Sources */,
+				A20010 /* PlainTextEditorView.swift in Sources */,
+				A20011 /* MarkdownReadView.swift in Sources */,
+				A20012 /* MarkdownSplitView.swift in Sources */,
+				A20013 /* CodeView.swift in Sources */,
+				A20014 /* RTFView.swift in Sources */,
+				A20015 /* FindBarView.swift in Sources */,
+				A20016 /* QuickSwitcherView.swift in Sources */,
+				A20017 /* SettingsView.swift in Sources */,
+				A20018 /* SyncedPreviewScrollView.swift in Sources */,
+				A20019 /* MarkdownHTML.swift in Sources */,
+				A20020 /* MarkdownWebView.swift in Sources */,
+				A20021 /* MdEdit.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		F10010 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		F10011 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		F10020 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "TextPad-NXG/TextPad-NXG.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_APP_SANDBOX = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "TextPad-NXG/App/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TextPad-NXG";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright 2026. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yogi.textpadnxg";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		F10021 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "TextPad-NXG/TextPad-NXG.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_APP_SANDBOX = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "TextPad-NXG/App/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TextPad-NXG";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright 2026. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yogi.textpadnxg";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F10001 /* Build configuration list for PBXProject "TextPad-NXG" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F10010 /* Debug */,
+				F10011 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F10003 /* Build configuration list for PBXNativeTarget "TextPad-NXG" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F10020 /* Debug */,
+				F10021 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E10099 /* Project object */;
+}
