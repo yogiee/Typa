@@ -184,5 +184,7 @@ you better.
 
 ## License
 
-To be decided before v0.2. Treat current source as **all rights reserved**
-until then; binaries from GitHub Releases are free to use as-is.
+[MIT](LICENSE) © 2026 yogiee.
+
+JetBrains Mono is bundled in the app under the
+[SIL Open Font License 1.1](https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt).
