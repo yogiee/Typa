@@ -2,7 +2,7 @@ import SwiftUI
 import AppKit
 
 /// Native macOS preferences window. Hosted by the SwiftUI `Settings { }` scene
-/// in `TextPadApp`. Uses `TabView` + `Form` per Apple's Human Interface
+/// in `TypaApp`. Uses `TabView` + `Form` per Apple's Human Interface
 /// Guidelines for small-app preferences (System Settings.app on macOS does the
 /// same when there are <6 categories).
 struct SettingsView: View {
