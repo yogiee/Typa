@@ -182,7 +182,7 @@ private struct AboutTab: View {
     @State private var updater = UpdaterService.shared
 
     private var appName: String {
-        Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "TextPad-NXG"
+        Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "Typa"
     }
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0"
@@ -214,7 +214,7 @@ private struct AboutTab: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 36)
 
-            Link(destination: URL(string: "https://github.com/yogiee/TextPad-NXG")!) {
+            Link(destination: URL(string: "https://github.com/yogiee/Typa")!) {
                 Label("View on GitHub", systemImage: "arrow.up.right.square")
             }
 

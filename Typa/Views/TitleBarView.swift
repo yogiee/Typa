@@ -66,7 +66,7 @@ struct TitleBarView: View {
                     }
                 }
             } else {
-                Text("TextPad-NXG")
+                Text("Typa")
                     .font(DesignTokens.font(13, weight: .medium))
                     .foregroundStyle(DesignTokens.fgMute(colorScheme))
             }

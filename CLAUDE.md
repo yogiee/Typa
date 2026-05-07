@@ -77,7 +77,7 @@ These are hard requirements. Do not deviate.
 
 ## What this repo is
 
-TextPad-NXG is a **native macOS app** built with **Swift and SwiftUI**. It is a streamlined markdown/text editor — not an IDE. The app is being built from scratch.
+Typa is a **native macOS app** built with **Swift and SwiftUI**. It is a streamlined markdown/text editor — not an IDE. The app is being built from scratch.
 
 The `WORKSPACE/` folder contains two reference sources:
 
@@ -105,7 +105,7 @@ WORKSPACE/
       samples.jsx           ← sample file fixtures
       tweaks-panel.jsx      ← design-only exploration panel, not part of the product
   macdown/                  ← Obj-C reference app (Xcode project)
-  TextPad-NXG.zip           ← archived snapshot
+  Typa.zip           ← archived snapshot
 ```
 
 To preview the design prototype: `open WORKSPACE/design_handoff_textpad_nxg/design_files/index.html`

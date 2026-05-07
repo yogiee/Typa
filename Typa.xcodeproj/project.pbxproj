@@ -46,8 +46,8 @@
 		B10003 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		B10004 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B10005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		B10006 /* TextPad-NXG.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "TextPad-NXG.entitlements"; sourceTree = "<group>"; };
-		B10099 /* TextPad-NXG.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TextPad-NXG.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10006 /* Typa.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Typa.entitlements"; sourceTree = "<group>"; };
+		B10099 /* Typa.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Typa.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B20001 /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
 		B20002 /* MarkdownEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownEngine.swift; sourceTree = "<group>"; };
 		B20003 /* SyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxHighlighter.swift; sourceTree = "<group>"; };
@@ -87,12 +87,12 @@
 		D10001 = {
 			isa = PBXGroup;
 			children = (
-				D10002 /* TextPad-NXG */,
+				D10002 /* Typa */,
 				D10099 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		D10002 /* TextPad-NXG */ = {
+		D10002 /* Typa */ = {
 			isa = PBXGroup;
 			children = (
 				D10003 /* App */,
@@ -100,9 +100,9 @@
 				D10004 /* Views */,
 				D20002 /* Utilities */,
 				D10005 /* Resources */,
-				B10006 /* TextPad-NXG.entitlements */,
+				B10006 /* Typa.entitlements */,
 			);
-			path = "TextPad-NXG";
+			path = "Typa";
 			sourceTree = "<group>";
 		};
 		D10003 /* App */ = {
@@ -152,7 +152,7 @@
 		D10099 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				B10099 /* TextPad-NXG.app */,
+				B10099 /* Typa.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -180,9 +180,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		E10001 /* TextPad-NXG */ = {
+		E10001 /* Typa */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = F10003 /* Build configuration list for PBXNativeTarget "TextPad-NXG" */;
+			buildConfigurationList = F10003 /* Build configuration list for PBXNativeTarget "Typa" */;
 			buildPhases = (
 				C10002 /* Sources */,
 				C10001 /* Frameworks */,
@@ -192,12 +192,12 @@
 			);
 			dependencies = (
 			);
-			name = "TextPad-NXG";
+			name = "Typa";
 			packageProductDependencies = (
 				P30002 /* Sparkle */,
 			);
-			productName = "TextPad-NXG";
-			productReference = B10099 /* TextPad-NXG.app */;
+			productName = "Typa";
+			productReference = B10099 /* Typa.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -215,7 +215,7 @@
 					};
 				};
 			};
-			buildConfigurationList = F10001 /* Build configuration list for PBXProject "TextPad-NXG" */;
+			buildConfigurationList = F10001 /* Build configuration list for PBXProject "Typa" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -231,7 +231,7 @@
 				P30001 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			targets = (
-				E10001 /* TextPad-NXG */,
+				E10001 /* Typa */,
 			);
 		};
 /* End PBXProject section */
@@ -394,15 +394,15 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = "TextPad-NXG/TextPad-NXG.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Typa/Typa.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 6;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = NO;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "TextPad-NXG/App/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "TextPad-NXG";
+				INFOPLIST_FILE = "Typa/App/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Typa";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright 2026. All rights reserved.";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -410,7 +410,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.3.3;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.yogi.textpadnxg";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yogi.typa";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -422,15 +422,15 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = "TextPad-NXG/TextPad-NXG.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Typa/Typa.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 6;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = NO;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "TextPad-NXG/App/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "TextPad-NXG";
+				INFOPLIST_FILE = "Typa/App/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Typa";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright 2026. All rights reserved.";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -438,7 +438,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.3.3;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.yogi.textpadnxg";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yogi.typa";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -449,7 +449,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		F10001 /* Build configuration list for PBXProject "TextPad-NXG" */ = {
+		F10001 /* Build configuration list for PBXProject "Typa" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F10010 /* Debug */,
@@ -458,7 +458,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		F10003 /* Build configuration list for PBXNativeTarget "TextPad-NXG" */ = {
+		F10003 /* Build configuration list for PBXNativeTarget "Typa" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F10020 /* Debug */,

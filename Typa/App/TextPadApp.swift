@@ -7,7 +7,7 @@ struct TextPadApp: App {
     private let updater = UpdaterService.shared   // starts Sparkle
 
     var body: some Scene {
-        Window("TextPad-NXG", id: "main") {
+        Window("Typa", id: "main") {
             ContentView()
                 .environment(appState)
                 .preferredColorScheme(appState.settings.theme.colorScheme)
