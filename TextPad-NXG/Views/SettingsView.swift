@@ -201,7 +201,7 @@ private struct AboutTab: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
 
-            Link(destination: URL(string: "https://github.com/")!) {
+            Link(destination: URL(string: "https://github.com/yogiee/TextPad-NXG")!) {
                 Label("View on GitHub", systemImage: "arrow.up.right.square")
             }
 

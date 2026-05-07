@@ -249,8 +249,11 @@ struct EditorNSTextView: NSViewRepresentable {
 
     func applyFocusMode(_ tv: NSTextView, activeLine: Int) {
         guard let ts = tv.textStorage else { return }
-        let normalFg = NSColor(colorScheme == .dark ? DesignTokens.fg(.dark)     : DesignTokens.fg(.light))
-        let dimFg    = NSColor(colorScheme == .dark ? DesignTokens.fgFaint(.dark) : DesignTokens.fgFaint(.light))
+        let normalFg = NSColor(colorScheme == .dark ? DesignTokens.fg(.dark) : DesignTokens.fg(.light))
+        // tertiaryLabelColor is the system "noticeably-dimmed" text color
+        // — automatically adapts between light/dark and produces a clear
+        // contrast vs the active line. fgFaint was too subtle.
+        let dimFg    = NSColor.tertiaryLabelColor
 
         ts.beginEditing()
         if focusMode {
