@@ -23,7 +23,7 @@ struct SettingsView: View {
             AboutTab()
                 .tabItem { Label("About", systemImage: "info.circle") }
         }
-        .frame(width: 520, height: 420)
+        .frame(width: 560, height: 460)
     }
 }
 
@@ -80,6 +80,8 @@ private struct AppearanceTab: View {
             }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .padding(.horizontal, 16)
     }
 }
 
@@ -131,6 +133,8 @@ private struct EditorTab: View {
             }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .padding(.horizontal, 16)
     }
 }
 
@@ -161,6 +165,8 @@ private struct MarkdownTab: View {
             }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .padding(.horizontal, 16)
     }
 }
 

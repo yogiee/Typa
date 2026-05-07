@@ -20,10 +20,21 @@
         <description>Most recent changes with links to updates.</description>
         <language>en</language>
 
-        <!--
-          First release. No prior installs to update from, so no item block
-          yet. The first <item> goes here once v0.2.0 is published.
-        -->
+        <item>
+            <title>Version 0.1.0</title>
+            <sparkle:releaseNotesLink>
+                https://github.com/yogiee/TextPad-NXG/releases/tag/v0.1.0
+            </sparkle:releaseNotesLink>
+            <pubDate>Wed, 06 May 2026 00:00:00 +0000</pubDate>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure
+                url="https://github.com/yogiee/TextPad-NXG/releases/download/v0.1.0/TextPad-NXG-0.1.0.dmg"
+                sparkle:version="1"
+                sparkle:shortVersionString="0.1.0"
+                sparkle:edSignature="j62OzAEAF98f/4cNR1ElGy1Vej8frAzN8h1SjcnqHeip9TVhzelaIksfL101Uu/DtaQZX+pmQ8FUiQqc8mVnBQ=="
+                length="2055239"
+                type="application/octet-stream" />
+        </item>
 
     </channel>
 </rss>
