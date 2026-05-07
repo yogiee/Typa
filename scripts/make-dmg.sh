@@ -44,7 +44,7 @@ echo "✓ DMG ($SIZE): $DMG_OUT"
 # Sparkle EdDSA signature for appcast.xml. Sparkle's sign_update tool ships
 # inside the resolved package artifacts; print the values to paste into the
 # new <item> block in appcast.xml.
-SIGN_UPDATE="$HOME/Library/Developer/Xcode/DerivedData/TextPad-NXG-fjkzxsthfkmbdwakggmdbskebwdj/SourcePackages/artifacts/sparkle/Sparkle/bin/sign_update"
+SIGN_UPDATE="$PROJECT_ROOT/build/.derived/SourcePackages/artifacts/sparkle/Sparkle/bin/sign_update"
 if [ -x "$SIGN_UPDATE" ]; then
   echo ""
   echo "▶ Signing DMG for Sparkle..."
