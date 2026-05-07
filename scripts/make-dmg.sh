@@ -1,10 +1,10 @@
 #!/bin/bash
-# Build TextPad-NXG (Release) and package as a DMG with drag-to-Applications layout.
+# Build Typa (Release) and package as a DMG with drag-to-Applications layout.
 set -e
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD_DIR="$PROJECT_ROOT/build"
-APP_NAME="TextPad-NXG"
+APP_NAME="Typa"
 APP_PATH="$BUILD_DIR/$APP_NAME.app"
 
 # Build first if app isn't there
@@ -67,6 +67,6 @@ else
   echo "   First-time setup: open the .xcodeproj once so SwiftPM resolves"
   echo "   Sparkle, then generate the EdDSA key pair:"
   echo "      \$(dirname $SIGN_UPDATE)/generate_keys"
-  echo "   Paste the printed public key into TextPad-NXG/App/Info.plist"
+  echo "   Paste the printed public key into Typa/App/Info.plist"
   echo "   under SUPublicEDKey, then re-run this script."
 fi

@@ -583,7 +583,7 @@ final class AppState {
 // MARK: - Sample content
 
 private let sampleReadme = """
-# TextPad-NXG
+# Typa
 
 A small, focused text editor for macOS that reads Markdown beautifully.
 

@@ -20,7 +20,7 @@ struct EmptyStateView: View {
             markIcon
                 .padding(.bottom, 16)
 
-            Text("TextPad-NXG")
+            Text("Typa")
                 .font(DesignTokens.font(18, weight: .semibold))
                 .foregroundStyle(DesignTokens.fg(colorScheme))
                 .padding(.bottom, 4)

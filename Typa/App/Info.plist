@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>TextPad-NXG</string>
+	<string>Typa</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -31,7 +31,7 @@
 	<key>ATSApplicationFontsPath</key>
 	<string>Fonts</string>
 	<key>SUFeedURL</key>
-	<string>https://raw.githubusercontent.com/yogiee/TextPad-NXG/main/appcast.xml</string>
+	<string>https://raw.githubusercontent.com/yogiee/Typa/main/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>k47OPDePNJN2Iyiu28Hz73RzNv/GHyryeSPWvGhv1+c=</string>
 	<key>CFBundleDocumentTypes</key>

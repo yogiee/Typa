@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Sparkle appcast for TextPad-NXG.
-  Hosted at: https://raw.githubusercontent.com/yogiee/TextPad-NXG/main/appcast.xml
+  Sparkle appcast for Typa.
+  Hosted at: https://raw.githubusercontent.com/yogiee/Typa/main/appcast.xml
 
   Release flow (full doc in scripts/make-dmg.sh and README):
     1. Bump CFBundleShortVersionString + CFBundleVersion in the project.
@@ -15,20 +15,20 @@
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"
      xmlns:dc="http://purl.org/dc/elements/1.1/">
     <channel>
-        <title>TextPad-NXG</title>
-        <link>https://github.com/yogiee/TextPad-NXG</link>
+        <title>Typa</title>
+        <link>https://github.com/yogiee/Typa</link>
         <description>Most recent changes with links to updates.</description>
         <language>en</language>
 
         <item>
             <title>Version 0.3.3</title>
             <sparkle:releaseNotesLink>
-                https://github.com/yogiee/TextPad-NXG/releases/tag/v0.3.3
+                https://github.com/yogiee/Typa/releases/tag/v0.3.3
             </sparkle:releaseNotesLink>
             <pubDate>Wed, 07 May 2026 00:00:00 +0000</pubDate>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure
-                url="https://github.com/yogiee/TextPad-NXG/releases/download/v0.3.3/TextPad-NXG-0.3.3.dmg"
+                url="https://github.com/yogiee/Typa/releases/download/v0.3.3/Typa-0.3.3.dmg"
                 sparkle:version="6"
                 sparkle:shortVersionString="0.3.3"
                 sparkle:edSignature="w7d+MBDkqv/Yw1m2azLMx4iEwv2+7BkS2ImXVaAunqVKQiBjhlD4yYy/7VJkHDPsyycLuu168NpHV8x4xVXvBw=="
@@ -39,12 +39,12 @@
         <item>
             <title>Version 0.3.2</title>
             <sparkle:releaseNotesLink>
-                https://github.com/yogiee/TextPad-NXG/releases/tag/v0.3.2
+                https://github.com/yogiee/Typa/releases/tag/v0.3.2
             </sparkle:releaseNotesLink>
             <pubDate>Wed, 07 May 2026 00:00:00 +0000</pubDate>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure
-                url="https://github.com/yogiee/TextPad-NXG/releases/download/v0.3.2/TextPad-NXG-0.3.2.dmg"
+                url="https://github.com/yogiee/Typa/releases/download/v0.3.2/Typa-0.3.2.dmg"
                 sparkle:version="5"
                 sparkle:shortVersionString="0.3.2"
                 sparkle:edSignature="z0IdNeZFvsg/HroQznqiU/k5Sbx1nS+Lq74OEfzKzHA2SRbwqvSFEQ1pFJaph8CRR3Lc+YGLLQ9KAIU1QyxgAA=="
@@ -55,12 +55,12 @@
         <item>
             <title>Version 0.3.1</title>
             <sparkle:releaseNotesLink>
-                https://github.com/yogiee/TextPad-NXG/releases/tag/v0.3.1
+                https://github.com/yogiee/Typa/releases/tag/v0.3.1
             </sparkle:releaseNotesLink>
             <pubDate>Wed, 07 May 2026 00:00:00 +0000</pubDate>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure
-                url="https://github.com/yogiee/TextPad-NXG/releases/download/v0.3.1/TextPad-NXG-0.3.1.dmg"
+                url="https://github.com/yogiee/Typa/releases/download/v0.3.1/Typa-0.3.1.dmg"
                 sparkle:version="4"
                 sparkle:shortVersionString="0.3.1"
                 sparkle:edSignature="igqG0Qrf05SUPlzKoFEZ7flfTYLHra/cpy2oqUxdbA7OQhEUMcsntQMYxfANG5CZ+rf9hdgM87rE3BqSZAS9Ag=="
@@ -71,12 +71,12 @@
         <item>
             <title>Version 0.3.0</title>
             <sparkle:releaseNotesLink>
-                https://github.com/yogiee/TextPad-NXG/releases/tag/v0.3.0
+                https://github.com/yogiee/Typa/releases/tag/v0.3.0
             </sparkle:releaseNotesLink>
             <pubDate>Wed, 07 May 2026 00:00:00 +0000</pubDate>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure
-                url="https://github.com/yogiee/TextPad-NXG/releases/download/v0.3.0/TextPad-NXG-0.3.0.dmg"
+                url="https://github.com/yogiee/Typa/releases/download/v0.3.0/Typa-0.3.0.dmg"
                 sparkle:version="3"
                 sparkle:shortVersionString="0.3.0"
                 sparkle:edSignature="49NLcZiaUDx2d9hGVRrySIbrC2zUHk9tgAAAAy3t72QtmOjtTo7LscyceVU24dNo2C1rGn7L+11QlybDBATGDQ=="
@@ -87,12 +87,12 @@
         <item>
             <title>Version 0.2.0</title>
             <sparkle:releaseNotesLink>
-                https://github.com/yogiee/TextPad-NXG/releases/tag/v0.2.0
+                https://github.com/yogiee/Typa/releases/tag/v0.2.0
             </sparkle:releaseNotesLink>
             <pubDate>Thu, 07 May 2026 00:00:00 +0000</pubDate>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure
-                url="https://github.com/yogiee/TextPad-NXG/releases/download/v0.2.0/TextPad-NXG-0.2.0.dmg"
+                url="https://github.com/yogiee/Typa/releases/download/v0.2.0/Typa-0.2.0.dmg"
                 sparkle:version="2"
                 sparkle:shortVersionString="0.2.0"
                 sparkle:edSignature="rTCLQBepM7gyNdMY62+KV42ZKOVQZml8xKAKMhf56heBzq3ezkZyPvP3yPrgjwhiwR/mVKuhzCzPTnSmq0x7Cg=="
@@ -103,12 +103,12 @@
         <item>
             <title>Version 0.1.0</title>
             <sparkle:releaseNotesLink>
-                https://github.com/yogiee/TextPad-NXG/releases/tag/v0.1.0
+                https://github.com/yogiee/Typa/releases/tag/v0.1.0
             </sparkle:releaseNotesLink>
             <pubDate>Wed, 06 May 2026 00:00:00 +0000</pubDate>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure
-                url="https://github.com/yogiee/TextPad-NXG/releases/download/v0.1.0/TextPad-NXG-0.1.0.dmg"
+                url="https://github.com/yogiee/Typa/releases/download/v0.1.0/Typa-0.1.0.dmg"
                 sparkle:version="1"
                 sparkle:shortVersionString="0.1.0"
                 sparkle:edSignature="j62OzAEAF98f/4cNR1ElGy1Vej8frAzN8h1SjcnqHeip9TVhzelaIksfL101Uu/DtaQZX+pmQ8FUiQqc8mVnBQ=="
