@@ -80,6 +80,9 @@ struct MarkdownSplitView: View {
                     accentColor: appState.accentColor,
                     colorScheme: colorScheme,
                     sourceScrollFraction: appState.settings.syncScroll ? scrollFraction : nil,
+                    findMatches:       appState.findOpen ? appState.findMatches : [],
+                    currentMatchIndex: appState.findOpen ? appState.currentMatchIndex : -1,
+                    findScrollTrigger: appState.findScrollTrigger,
                     onCaretLineChange: { line, _ in
                         activeLine = line
                     },
@@ -180,7 +183,10 @@ struct MarkdownSplitView: View {
                     if appState.settings.syncScroll { scrollFraction = f }
                 },
                 anchorToJump:      appState.activeAnchor,
-                anchorJumpRequest: appState.anchorJumpCounter
+                anchorJumpRequest: appState.anchorJumpCounter,
+                findQuery:         appState.findOpen ? appState.findQuery : "",
+                findMatchIndex:    appState.findOpen ? appState.currentMatchIndex : -1,
+                findScrollTrigger: appState.findScrollTrigger
             )
         }
         .background(DesignTokens.bgPane(colorScheme).opacity(0.7))

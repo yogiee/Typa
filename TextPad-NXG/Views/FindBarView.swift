@@ -8,10 +8,13 @@ struct FindBarView: View {
     var body: some View {
         VStack(alignment: .trailing, spacing: 0) {
             mainRow
-            if appState.replaceMode {
+            if appState.replaceMode && appState.findReplaceEnabled {
                 Divider().opacity(0.5)
                 replaceRow
             }
+        }
+        .onChange(of: appState.findReplaceEnabled) { _, enabled in
+            if !enabled { appState.replaceMode = false }
         }
         .frame(width: 360)
         .background(DesignTokens.bgElev(colorScheme))
@@ -49,11 +52,12 @@ struct FindBarView: View {
             findBtn(systemImage: "chevron.up")   { appState.findPrev() }
             findBtn(systemImage: "chevron.down") { appState.findNext() }
 
-            Divider().frame(height: 14).opacity(0.6)
-
-            findBtn(systemImage: "arrow.left.arrow.right",
-                    isActive: appState.replaceMode) {
-                appState.replaceMode.toggle()
+            if appState.findReplaceEnabled {
+                Divider().frame(height: 14).opacity(0.6)
+                findBtn(systemImage: "arrow.left.arrow.right",
+                        isActive: appState.replaceMode) {
+                    appState.replaceMode.toggle()
+                }
             }
 
             findBtn(systemImage: "xmark") {

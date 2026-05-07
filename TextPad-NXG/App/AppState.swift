@@ -156,6 +156,14 @@ final class AppState {
     var isCode: Bool { activeFile?.kind == .code }
     var isRtf: Bool { activeFile?.kind == .rtf }
 
+    /// Replace is only meaningful when an editable NSTextView is on screen.
+    /// Read mode shows a WKWebView (read-only); split mode always has the
+    /// source pane visible and editable.
+    var findReplaceEnabled: Bool {
+        guard isMd else { return true }
+        return activeMdMode == .split
+    }
+
     var activeMdMode: MdMode {
         get { activeTabId.flatMap { mdModes[$0] } ?? settings.mdDefault }
         set { if let id = activeTabId { mdModes[id] = newValue } }

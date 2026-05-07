@@ -16,7 +16,10 @@ struct MarkdownReadView: View {
             accentColor:       appState.accentColor,
             colorScheme:       colorScheme,
             anchorToJump:      appState.activeAnchor,
-            anchorJumpRequest: appState.anchorJumpCounter
+            anchorJumpRequest: appState.anchorJumpCounter,
+            findQuery:         appState.findOpen ? appState.findQuery : "",
+            findMatchIndex:    appState.findOpen ? appState.currentMatchIndex : -1,
+            findScrollTrigger: appState.findScrollTrigger
         )
         .background(DesignTokens.bgPane(colorScheme))
     }
