@@ -1,5 +1,10 @@
 import SwiftUI
 
+private struct LangEntry: Identifiable {
+    let id: String   // lang code, e.g. "js"
+    let name: String // display name, e.g. "JavaScript"
+}
+
 struct StatusBarView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.colorScheme) private var colorScheme
@@ -29,15 +34,71 @@ struct StatusBarView: View {
     // MARK: Mode chip
 
     private var modeChip: some View {
+        Group {
+            if let file = appState.activeFile {
+                fileKindMenu(file: file)
+            } else {
+                chipLabel("Ready")
+                    .padding(.horizontal, 10)
+            }
+        }
+    }
+
+    private func chipLabel(_ text: String) -> some View {
         HStack(spacing: 5) {
             Circle()
                 .fill(appState.accentColor)
                 .frame(width: 5, height: 5)
-            Text(modeLabel)
+            Text(text)
                 .font(DesignTokens.font(11, weight: .medium))
                 .foregroundStyle(DesignTokens.fgSoft(colorScheme))
         }
-        .padding(.horizontal, 10)
+    }
+
+    @ViewBuilder
+    private func fileKindMenu(file: FileItem) -> some View {
+        let nonEmptyLines = file.body
+            .components(separatedBy: "\n")
+            .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+            .count
+        let canAutoDetect = nonEmptyLines >= 5
+
+        Menu {
+            Button("Markdown") {
+                appState.setFileKind(.markdown, lang: nil, for: file.id)
+            }
+            Button("Plain Text") {
+                appState.setFileKind(.plainText, lang: nil, for: file.id)
+            }
+            Button("Rich Text") {
+                appState.setFileKind(.rtf, lang: nil, for: file.id)
+            }
+            Divider()
+            ForEach(sortedLangs) { entry in
+                Button(entry.name) {
+                    appState.setFileKind(.code, lang: entry.id, for: file.id)
+                }
+            }
+            Divider()
+            Button("Auto-detect") {
+                if let (kind, lang) = AppState.detectKindFromContent(file.body) {
+                    appState.setFileKind(kind, lang: lang, for: file.id)
+                }
+            }
+            .disabled(!canAutoDetect)
+        } label: {
+            chipLabel(modeLabel)
+                .padding(.horizontal, 10)
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+    }
+
+    private var sortedLangs: [LangEntry] {
+        SyntaxHighlighter.langNames
+            .filter { $0.key != "md" }
+            .sorted { $0.value < $1.value }
+            .map { LangEntry(id: $0.key, name: $0.value) }
     }
 
     private var modeLabel: String {

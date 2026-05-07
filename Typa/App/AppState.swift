@@ -315,13 +315,17 @@ final class AppState {
         if f.body == body { return }
         f.body = body
         f.isDirty = true
-        // Auto-promote untitled plain-text files once content reveals their kind.
-        if f.url == nil, f.kind == .plainText,
-           let (kind, lang) = Self.detectKindFromContent(body) {
-            f.kind = kind
-            f.lang = lang
-        }
         files[id] = f
+    }
+
+    func setFileKind(_ kind: FileKind, lang: String?, for id: String) {
+        guard var f = files[id] else { return }
+        f.kind = kind
+        f.lang = lang
+        files[id] = f
+        if kind == .markdown && mdModes[id] == nil {
+            mdModes[id] = settings.mdDefault
+        }
     }
 
     // MARK: File operations
