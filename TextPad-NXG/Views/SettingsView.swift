@@ -50,28 +50,34 @@ private struct AppearanceTab: View {
                     }
                 }
 
-                HStack {
-                    Slider(value: $settings.fontSize, in: 11...22, step: 1)
-                    Text("\(Int(settings.fontSize)) pt")
-                        .monospacedDigit()
-                        .frame(width: 50, alignment: .trailing)
-                        .foregroundStyle(.secondary)
+                LabeledContent("Size") {
+                    HStack {
+                        Slider(value: $settings.fontSize, in: 11...22, step: 1)
+                        Text("\(Int(settings.fontSize)) pt")
+                            .monospacedDigit()
+                            .frame(width: 50, alignment: .trailing)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
-                HStack {
-                    Slider(value: $settings.lineHeightMultiplier, in: 1.0...1.6, step: 0.05)
-                    Text(String(format: "%.2f×", settings.lineHeightMultiplier))
-                        .monospacedDigit()
-                        .frame(width: 50, alignment: .trailing)
-                        .foregroundStyle(.secondary)
+                LabeledContent("Line height") {
+                    HStack {
+                        Slider(value: $settings.lineHeightMultiplier, in: 1.0...1.6, step: 0.05)
+                        Text(String(format: "%.2f×", settings.lineHeightMultiplier))
+                            .monospacedDigit()
+                            .frame(width: 50, alignment: .trailing)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
-                HStack {
-                    Slider(value: $settings.lineLength, in: 50...100, step: 2)
-                    Text("\(Int(settings.lineLength)) ch")
-                        .monospacedDigit()
-                        .frame(width: 50, alignment: .trailing)
-                        .foregroundStyle(.secondary)
+                LabeledContent("Line length") {
+                    HStack {
+                        Slider(value: $settings.lineLength, in: 50...100, step: 2)
+                        Text("\(Int(settings.lineLength)) ch")
+                            .monospacedDigit()
+                            .frame(width: 50, alignment: .trailing)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
 
