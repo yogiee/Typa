@@ -320,10 +320,18 @@ final class AppState {
     /// by `loadFile` and `write` so that saving an Untitled.txt as `foo.js`
     /// promotes it to a code file with the correct language.
     private static func detectKind(for url: URL) -> (FileKind, String?) {
+        let name = url.lastPathComponent.lowercased()
+        if name == "dockerfile" || name.hasSuffix(".dockerfile") {
+            return (.code, "dockerfile")
+        }
         switch url.pathExtension.lowercased() {
         case "md", "markdown": return (.markdown, nil)
         case "rtf":            return (.rtf, nil)
-        case "js","ts","jsx","tsx","php","css","html","htm","json","py","sh":
+        case "js","mjs","cjs","ts","jsx","tsx","php","css","scss",
+             "html","htm","json","py","sh","bash","zsh",
+             "yml","yaml","toml","xml","svg","plist",
+             "swift","rb","gemspec","sql","rs","go",
+             "ini","conf","cfg","env":
             return (.code, SyntaxHighlighter.langFromName(url.lastPathComponent))
         default: return (.plainText, nil)
         }
