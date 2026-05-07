@@ -32,15 +32,60 @@ extension MarkdownEngine {
         \(bodyHTML)
         </article>
         <script>
-        // Live-update helper — replaces the body markup without a navigation,
-        // so editing the source doesn't flash the preview blank or reset
-        // scroll position.
+        // Live-update helper — replaces the body markup without a navigation.
+        // Re-applies any active find highlights after the swap.
+        window._tpFind = { q: '', idx: -1 };
         window.tpReplaceBody = function(html) {
             const el = document.querySelector('.markdown-body');
-            if (el) el.innerHTML = html;
+            if (el) {
+                el.innerHTML = html;
+                if (window._tpFind.q) window.tpHighlight(window._tpFind.q, window._tpFind.idx);
+            }
         };
-        // Two-way scroll-sync helper. Source → preview drives scrollTop;
-        // preview → source posts a 0..1 fraction back via webkit handler.
+        // Find highlight helper. Called from Swift whenever the query or
+        // current-match index changes. Clears existing marks, walks DOM text
+        // nodes, wraps all case-insensitive matches in <mark class="tp-find">,
+        // and scrolls the current match into view.
+        window.tpHighlight = function(query, idx) {
+            window._tpFind = { q: query, idx: idx };
+            document.querySelectorAll('mark.tp-find').forEach(function(m) {
+                var p = m.parentNode;
+                while (m.firstChild) p.insertBefore(m.firstChild, m);
+                p.removeChild(m);
+                p.normalize();
+            });
+            if (!query) return;
+            var re = new RegExp(query.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'), 'gi');
+            var root = document.querySelector('.markdown-body') || document.body;
+            var nodes = [], walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+                acceptNode: function(n) {
+                    var t = n.parentNode.nodeName.toUpperCase();
+                    return (t==='SCRIPT'||t==='STYLE'||t==='MARK') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+                }
+            }), n;
+            while ((n = walker.nextNode())) nodes.push(n);
+            var count = 0;
+            nodes.forEach(function(tn) {
+                var text = tn.textContent;
+                if (!re.test(text)) { re.lastIndex = 0; return; }
+                re.lastIndex = 0;
+                var frag = document.createDocumentFragment(), last = 0, m;
+                while ((m = re.exec(text)) !== null) {
+                    if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+                    var mark = document.createElement('mark');
+                    mark.className = 'tp-find' + (count === idx ? ' tp-find-current' : '');
+                    mark.textContent = m[0];
+                    frag.appendChild(mark);
+                    count++;
+                    last = m.index + m[0].length;
+                }
+                if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+                tn.parentNode.replaceChild(frag, tn);
+            });
+            var cur = document.querySelector('.tp-find-current');
+            if (cur) cur.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        };
+        // Two-way scroll-sync helper.
         window.tpSetScrollFraction = function(f) {
             const max = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0);
             window.scrollTo(0, f * max);
@@ -395,6 +440,8 @@ extension MarkdownEngine {
         .tok-atrule   { color: \(tk["atrule"]  ?? fg); }
         .tok-bool     { color: \(tk["bool"]    ?? fg); }
         ::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+        mark.tp-find { background: rgba(255,220,0,0.45); color: inherit; border-radius: 2px; padding: 0 1px; }
+        mark.tp-find-current { background: rgba(255,140,0,0.6); }
         """
     }
 }

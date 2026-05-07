@@ -31,6 +31,10 @@ struct MarkdownWebView: NSViewRepresentable {
     var anchorToJump:      String? = nil
     var anchorJumpRequest: Int     = 0
 
+    var findQuery:         String  = ""
+    var findMatchIndex:    Int     = -1
+    var findScrollTrigger: Int     = -1
+
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     func makeNSView(context: Context) -> WKWebView {
@@ -93,6 +97,20 @@ struct MarkdownWebView: NSViewRepresentable {
                 )
             }
         }
+
+        if findQuery         != context.coordinator.lastFindQuery  ||
+           findMatchIndex    != context.coordinator.lastFindIndex  ||
+           findScrollTrigger != context.coordinator.lastFindTrigger {
+            context.coordinator.lastFindQuery   = findQuery
+            context.coordinator.lastFindIndex   = findMatchIndex
+            context.coordinator.lastFindTrigger = findScrollTrigger
+            if let data = try? JSONEncoder().encode([findQuery]),
+               let jsArr = String(data: data, encoding: .utf8) {
+                wv.evaluateJavaScript(
+                    "window.tpHighlight(\(jsArr)[0], \(findMatchIndex));",
+                    completionHandler: nil)
+            }
+        }
     }
 
     private func fullPageHTML() -> String {
@@ -122,6 +140,9 @@ struct MarkdownWebView: NSViewRepresentable {
         var lastPreviewFraction: CGFloat = 0  // user's last reading position
         var lastAnchorRequest: Int = 0        // last anchor-jump counter we acted on
         var ignorePreviewScrollUntil: Date = .distantPast
+        var lastFindQuery:    String = ""
+        var lastFindIndex:    Int    = -2
+        var lastFindTrigger:  Int    = -2
 
         init(_ parent: MarkdownWebView) { self.parent = parent }
 

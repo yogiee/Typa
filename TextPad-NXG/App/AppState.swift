@@ -124,9 +124,13 @@ final class AppState {
     var sidebarOpen: Bool = false
     var sidebarMode: SidebarMode = .files
     var findOpen: Bool = false
-    var findQuery: String = ""
+    var findQuery: String = "" {
+        didSet { if findQuery != oldValue { currentMatchIndex = 0; findScrollTrigger += 1 } }
+    }
     var replaceMode: Bool = false
     var replaceQuery: String = ""
+    var currentMatchIndex: Int = 0
+    var findScrollTrigger: Int = 0
     var qsOpen: Bool = false
     var rtfToolbarOpen: Bool = true
     var activeAnchor: String? = nil
@@ -152,6 +156,14 @@ final class AppState {
     var isCode: Bool { activeFile?.kind == .code }
     var isRtf: Bool { activeFile?.kind == .rtf }
 
+    /// Replace is only meaningful when an editable NSTextView is on screen.
+    /// Read mode shows a WKWebView (read-only); split mode always has the
+    /// source pane visible and editable.
+    var findReplaceEnabled: Bool {
+        guard isMd else { return true }
+        return activeMdMode == .split
+    }
+
     var activeMdMode: MdMode {
         get { activeTabId.flatMap { mdModes[$0] } ?? settings.mdDefault }
         set { if let id = activeTabId { mdModes[id] = newValue } }
@@ -167,11 +179,46 @@ final class AppState {
         return MarkdownEngine.countStats(f.body)
     }
 
-    var findCount: Int {
-        guard !findQuery.isEmpty, let f = activeFile else { return 0 }
+    var findMatches: [NSRange] {
+        guard !findQuery.isEmpty, let f = activeFile else { return [] }
         let escaped = NSRegularExpression.escapedPattern(for: findQuery)
-        guard let re = try? NSRegularExpression(pattern: escaped, options: .caseInsensitive) else { return 0 }
-        return re.numberOfMatches(in: f.body, range: NSRange(f.body.startIndex..., in: f.body))
+        guard let re = try? NSRegularExpression(pattern: escaped, options: .caseInsensitive) else { return [] }
+        let nsBody = f.body as NSString
+        var results: [NSRange] = []
+        re.enumerateMatches(in: f.body, range: NSRange(location: 0, length: nsBody.length)) { m, _, _ in
+            if let m = m { results.append(m.range) }
+        }
+        return results
+    }
+
+    var findCount: Int { findMatches.count }
+
+    func findNext() {
+        guard !findMatches.isEmpty else { return }
+        currentMatchIndex = (currentMatchIndex + 1) % findMatches.count
+        findScrollTrigger += 1
+    }
+
+    func findPrev() {
+        guard !findMatches.isEmpty else { return }
+        currentMatchIndex = (currentMatchIndex - 1 + findMatches.count) % findMatches.count
+        findScrollTrigger += 1
+    }
+
+    func replaceAll() {
+        guard !findQuery.isEmpty, let id = activeTabId, var f = files[id] else { return }
+        let escaped = NSRegularExpression.escapedPattern(for: findQuery)
+        guard let re = try? NSRegularExpression(pattern: escaped, options: .caseInsensitive) else { return }
+        let nsBody = f.body as NSString
+        let newBody = re.stringByReplacingMatches(
+            in: f.body,
+            range: NSRange(location: 0, length: nsBody.length),
+            withTemplate: NSRegularExpression.escapedTemplate(for: replaceQuery)
+        )
+        guard newBody != f.body else { return }
+        f.body = newBody
+        f.isDirty = true
+        files[id] = f
     }
 
     var accentColor: Color {
