@@ -247,6 +247,20 @@ final class AppState {
         if activeTabId == id {
             activeTabId = openTabIds.last
         }
+        guard var f = files[id] else { return }
+        if let url = f.url {
+            // Reload from disk so isDirty is cleared and the in-memory body
+            // matches the saved state (prevents ghost quit-prompts and stale
+            // content when the file is reopened from the sidebar).
+            if let fresh = try? String(contentsOf: url, encoding: .utf8) {
+                f.body = fresh
+            }
+            f.isDirty = false
+            files[id] = f
+        } else {
+            // Untitled files have no disk backing and no sidebar entry — drop them.
+            files.removeValue(forKey: id)
+        }
     }
 
     func updateBody(_ body: String, for id: String) {
