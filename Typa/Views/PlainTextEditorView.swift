@@ -275,7 +275,6 @@ struct EditorNSTextView: NSViewRepresentable {
                                           multiplier: lineHeightMultiplier)
         let ps = NSMutableParagraphStyle()
         ps.minimumLineHeight = lh
-        ps.maximumLineHeight = lh
         tv.defaultParagraphStyle = ps
 
         guard let ts = tv.textStorage else { return }
