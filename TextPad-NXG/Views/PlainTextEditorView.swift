@@ -46,6 +46,9 @@ struct PlainTextEditorView: View {
                 focusMode:   appState.settings.focusMode,
                 accentColor: appState.accentColor,
                 colorScheme: colorScheme,
+                findMatches:       appState.findOpen ? appState.findMatches : [],
+                currentMatchIndex: appState.findOpen ? appState.currentMatchIndex : -1,
+                findScrollTrigger: appState.findScrollTrigger,
                 onCaretLineChange: { line, _ in
                     activeLine = line
                 },
@@ -133,6 +136,10 @@ struct EditorNSTextView: NSViewRepresentable {
     /// programmatically. Used by the split view to drive source-from-preview.
     var sourceScrollFraction: CGFloat? = nil
 
+    var findMatches:       [NSRange] = []
+    var currentMatchIndex: Int      = -1
+    var findScrollTrigger: Int      = -1
+
     var onCaretLineChange: ((Int, Int) -> Void)? = nil
     var onScrollChange:    ((CGFloat) -> Void)?  = nil
     var onScrollFraction:  ((CGFloat) -> Void)?  = nil
@@ -212,6 +219,7 @@ struct EditorNSTextView: NSViewRepresentable {
         }
         applyStyle(tv)
         applyFocusMode(tv, activeLine: context.coordinator.activeLine)
+        applyFindHighlights(tv, context.coordinator)
 
         // Drive scroll position from outside (preview → source sync)
         if let f = sourceScrollFraction {
@@ -220,6 +228,36 @@ struct EditorNSTextView: NSViewRepresentable {
 
         DispatchQueue.main.async {
             context.coordinator.emitLineSegments()
+        }
+    }
+
+    func applyFindHighlights(_ tv: NSTextView, _ coord: Coordinator) {
+        guard let ts = tv.textStorage else { return }
+        guard coord.lastFindMatches != findMatches
+           || coord.lastFindIndex   != currentMatchIndex
+           || coord.lastFindTrigger != findScrollTrigger else { return }
+        coord.lastFindMatches = findMatches
+        coord.lastFindIndex   = currentMatchIndex
+        coord.lastFindTrigger = findScrollTrigger
+
+        ts.beginEditing()
+        ts.removeAttribute(.backgroundColor, range: NSRange(location: 0, length: ts.length))
+        for (i, range) in findMatches.enumerated() {
+            guard range.location + range.length <= ts.length else { continue }
+            let color: NSColor = i == currentMatchIndex
+                ? .systemOrange.withAlphaComponent(0.55)
+                : .systemYellow.withAlphaComponent(0.35)
+            ts.addAttribute(.backgroundColor, value: color, range: range)
+        }
+        ts.endEditing()
+
+        if currentMatchIndex >= 0, currentMatchIndex < findMatches.count {
+            let r = findMatches[currentMatchIndex]
+            if r.location + r.length <= ts.length {
+                tv.scrollRangeToVisible(r)
+                tv.setSelectedRange(r)
+                DispatchQueue.main.async { tv.showFindIndicator(for: r) }
+            }
         }
     }
 
@@ -288,6 +326,9 @@ struct EditorNSTextView: NSViewRepresentable {
         var parent: EditorNSTextView
         weak var textView: NSTextView?
         var activeLine: Int = 0
+        var lastFindMatches: [NSRange] = []
+        var lastFindIndex:   Int       = -2
+        var lastFindTrigger: Int       = -2
         // Suppress own scroll-fraction emission for a brief window after a
         // programmatic scroll triggered by an external driver (preview → source).
         // Keeps the bidirectional sync from oscillating.

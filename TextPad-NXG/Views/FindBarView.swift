@@ -38,6 +38,7 @@ struct FindBarView: View {
                 .textFieldStyle(.plain)
                 .focused($inputFocused)
                 .frame(maxWidth: .infinity)
+                .onSubmit { appState.findNext() }
 
             if appState.findCount > 0 || !appState.findQuery.isEmpty {
                 Text(appState.findQuery.isEmpty ? "" : "\(appState.findCount) match\(appState.findCount == 1 ? "" : "es")")
@@ -45,8 +46,8 @@ struct FindBarView: View {
                     .foregroundStyle(DesignTokens.fgMute(colorScheme))
             }
 
-            findBtn(systemImage: "chevron.up") {}
-            findBtn(systemImage: "chevron.down") {}
+            findBtn(systemImage: "chevron.up")   { appState.findPrev() }
+            findBtn(systemImage: "chevron.down") { appState.findNext() }
 
             Divider().frame(height: 14).opacity(0.6)
 
@@ -73,8 +74,9 @@ struct FindBarView: View {
                 .font(DesignTokens.font(13))
                 .textFieldStyle(.plain)
                 .frame(maxWidth: .infinity)
+                .onSubmit { appState.replaceAll() }
 
-            Button("Replace all") {}
+            Button("Replace all") { appState.replaceAll() }
                 .font(DesignTokens.font(11))
                 .foregroundStyle(appState.accentColor)
                 .buttonStyle(.plain)
