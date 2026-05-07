@@ -10,11 +10,13 @@ struct MarkdownReadView: View {
 
     var body: some View {
         MarkdownWebView(
-            source:      file.body,
-            fontSize:    fontSize,
-            lineLength:  Int(appState.settings.lineLength),
-            accentColor: appState.accentColor,
-            colorScheme: colorScheme
+            source:            file.body,
+            fontSize:          fontSize,
+            lineLength:        Int(appState.settings.lineLength),
+            accentColor:       appState.accentColor,
+            colorScheme:       colorScheme,
+            anchorToJump:      appState.activeAnchor,
+            anchorJumpRequest: appState.anchorJumpCounter
         )
         .background(DesignTokens.bgPane(colorScheme))
     }

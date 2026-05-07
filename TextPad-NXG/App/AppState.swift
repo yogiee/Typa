@@ -5,14 +5,17 @@ import AppKit
 
 struct FileItem: Identifiable {
     let id: String
-    let name: String
-    let folder: String
+    var name: String
+    var folder: String
     var kind: FileKind
     var lang: String?
     var body: String
     var modified: String
     var starred: Bool = false
     var url: URL?
+    /// True when in-memory body diverges from what's on disk (or for an
+    /// untitled file, true once anything has been typed).
+    var isDirty: Bool = false
 
     var displayKind: String {
         switch kind {
@@ -83,6 +86,10 @@ final class AppState {
     var qsOpen: Bool = false
     var rtfToolbarOpen: Bool = true
     var activeAnchor: String? = nil
+    /// Incremented every time the user requests a jump-to-anchor. The
+    /// markdown preview observes this counter so repeated clicks on the
+    /// same heading still trigger a scroll.
+    var anchorJumpCounter: Int = 0
     var smartPasteToast: String? = nil
 
     // MARK: Settings
@@ -127,7 +134,41 @@ final class AppState {
 
     var allFiles: [FileItem] { Array(files.values) }
     var starredFiles: [FileItem] { allFiles.filter { $0.starred } }
-    var recentFiles: [FileItem] { allFiles }
+    var recentFiles: [FileItem] {
+        // Most-recently-opened first, capped to recentURLs size.
+        recentURLs.compactMap { url in
+            allFiles.first { $0.url == url }
+        }
+    }
+
+    // MARK: Recent files persistence
+    //
+    // Stored as an ordered array of URL bookmark data so we keep access
+    // across path changes (e.g. user moves the file). Capped to 12 entries.
+
+    private static let recentsKey = "tp.recentFileURLs"
+    private static let recentsLimit = 12
+    private(set) var recentURLs: [URL] = AppState.loadRecentURLs()
+
+    private static func loadRecentURLs() -> [URL] {
+        guard let strings = UserDefaults.standard.array(forKey: recentsKey) as? [String]
+        else { return [] }
+        return strings.compactMap { URL(string: $0) }
+    }
+
+    private func saveRecentURLs() {
+        let strings = recentURLs.map { $0.absoluteString }
+        UserDefaults.standard.set(strings, forKey: Self.recentsKey)
+    }
+
+    private func recordRecent(_ url: URL) {
+        recentURLs.removeAll { $0 == url }
+        recentURLs.insert(url, at: 0)
+        if recentURLs.count > Self.recentsLimit {
+            recentURLs = Array(recentURLs.prefix(Self.recentsLimit))
+        }
+        saveRecentURLs()
+    }
 
     // MARK: Tab management
 
@@ -148,7 +189,11 @@ final class AppState {
     }
 
     func updateBody(_ body: String, for id: String) {
-        files[id]?.body = body
+        guard var f = files[id] else { return }
+        if f.body == body { return }
+        f.body = body
+        f.isDirty = true
+        files[id] = f
     }
 
     // MARK: File operations
@@ -174,24 +219,204 @@ final class AppState {
         let id = url.absoluteString
         if files[id] != nil { openFile(id: id); return }
         guard let body = try? String(contentsOf: url, encoding: .utf8) else { return }
-        let ext = url.pathExtension.lowercased()
-        let kind: FileKind
-        var lang: String? = nil
-        switch ext {
-        case "md", "markdown": kind = .markdown
-        case "rtf":            kind = .rtf
-        case "js","ts","jsx","tsx","php","css","html","htm","json","py","sh":
-            kind = .code
-            lang = SyntaxHighlighter.langFromName(url.lastPathComponent)
-        default: kind = .plainText
-        }
+        let (kind, lang) = Self.detectKind(for: url)
         files[id] = FileItem(id: id, name: url.lastPathComponent,
                               folder: url.deletingLastPathComponent().lastPathComponent,
-                              kind: kind, lang: lang, body: body, modified: "now", url: url)
+                              kind: kind, lang: lang, body: body,
+                              modified: Self.relativeDateString(Date()),
+                              url: url)
         openFile(id: id)
+        recordRecent(url)
+    }
+
+    /// Hydrate the sidebar's Recent list at launch by reading lightweight
+    /// metadata from disk for each remembered URL — without opening tabs.
+    /// Files that no longer exist or can't be read are dropped from recents.
+    func hydrateRecentFiles() {
+        let surviving = recentURLs.filter { url in
+            (try? url.checkResourceIsReachable()) == true
+        }
+        recentURLs = surviving
+        saveRecentURLs()
+
+        for url in surviving where files[url.absoluteString] == nil {
+            // Lazy hydration: read body so the row's kind chip is correct.
+            // Skipped if the file is huge (>1 MB) to keep launch instant.
+            let attrs = try? FileManager.default.attributesOfItem(atPath: url.path)
+            if let size = attrs?[.size] as? Int, size > 1_000_000 { continue }
+            guard let body = try? String(contentsOf: url, encoding: .utf8) else { continue }
+            let (kind, lang) = Self.detectKind(for: url)
+            let id = url.absoluteString
+            files[id] = FileItem(id: id, name: url.lastPathComponent,
+                                  folder: url.deletingLastPathComponent().lastPathComponent,
+                                  kind: kind, lang: lang, body: body,
+                                  modified: Self.relativeDateString(Date()),
+                                  url: url)
+        }
+    }
+
+    /// Single source of truth for mapping a file URL to (kind, lang). Used
+    /// by `loadFile` and `write` so that saving an Untitled.txt as `foo.js`
+    /// promotes it to a code file with the correct language.
+    private static func detectKind(for url: URL) -> (FileKind, String?) {
+        switch url.pathExtension.lowercased() {
+        case "md", "markdown": return (.markdown, nil)
+        case "rtf":            return (.rtf, nil)
+        case "js","ts","jsx","tsx","php","css","html","htm","json","py","sh":
+            return (.code, SyntaxHighlighter.langFromName(url.lastPathComponent))
+        default: return (.plainText, nil)
+        }
+    }
+
+    // MARK: Save
+
+    /// `⌘S`. Writes the active file to its URL. If the file has no URL
+    /// (Untitled), opens a save panel.
+    func saveActive() {
+        guard let id = activeTabId, let file = files[id] else { return }
+        if file.url == nil {
+            saveActiveAs(); return
+        }
+        write(file: file, to: file.url!)
+    }
+
+    /// `⌘⇧S`. Always opens a save panel, even for files that already have
+    /// a URL on disk.
+    func saveActiveAs() {
+        guard let id = activeTabId, let file = files[id] else { return }
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = file.name
+        panel.canCreateDirectories = true
+        panel.begin { [weak self] response in
+            guard response == .OK, let url = panel.url else { return }
+            Task { @MainActor in self?.write(file: file, to: url) }
+        }
+    }
+
+    /// Close the given tab, prompting if there are unsaved changes.
+    /// Returns `true` if the tab was closed (or there was nothing to save),
+    /// `false` if the user cancelled.
+    @discardableResult
+    func closeTabConfirmingSave(id: String) -> Bool {
+        guard let file = files[id] else { closeTab(id: id); return true }
+        guard file.isDirty else { closeTab(id: id); return true }
+
+        let alert = NSAlert()
+        alert.messageText = "Do you want to save the changes to \(file.name)?"
+        alert.informativeText = "Your changes will be lost if you don't save them."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Save")
+        alert.addButton(withTitle: "Don't Save")
+        alert.addButton(withTitle: "Cancel")
+
+        let response = alert.runModal()
+        switch response {
+        case .alertFirstButtonReturn:   // Save
+            // Save synchronously when possible; otherwise (Untitled) open
+            // the save panel and treat its completion as the tab close.
+            if let url = file.url {
+                write(file: file, to: url)
+                closeTab(id: id)
+                return true
+            } else {
+                let panel = NSSavePanel()
+                panel.nameFieldStringValue = file.name
+                panel.canCreateDirectories = true
+                let pr = panel.runModal()
+                if pr == .OK, let url = panel.url {
+                    write(file: file, to: url)
+                    closeTab(id: id)
+                    return true
+                } else {
+                    return false
+                }
+            }
+        case .alertSecondButtonReturn:  // Don't Save
+            closeTab(id: id)
+            return true
+        default:                         // Cancel
+            return false
+        }
+    }
+
+    /// Save every dirty file synchronously. For files without a URL,
+    /// runs a modal save panel — if the user cancels, returns `false` so
+    /// the caller can abort whatever flow triggered the save (e.g. quit).
+    @discardableResult
+    func saveAllDirty() -> Bool {
+        let dirty = allFiles.filter { $0.isDirty }
+        for file in dirty {
+            if let url = file.url {
+                write(file: file, to: url)
+            } else {
+                let panel = NSSavePanel()
+                panel.nameFieldStringValue = file.name
+                panel.canCreateDirectories = true
+                let response = panel.runModal()
+                guard response == .OK, let url = panel.url else {
+                    return false
+                }
+                write(file: file, to: url)
+            }
+        }
+        return true
+    }
+
+    private func write(file: FileItem, to url: URL) {
+        do {
+            try file.body.write(to: url, atomically: true, encoding: .utf8)
+        } catch {
+            NSAlert(error: error).runModal()
+            return
+        }
+
+        // Re-detect kind/lang from the new URL's extension so saving
+        // Untitled.txt as foo.js promotes it from plain text to a code file
+        // with syntax highlighting.
+        let (newKind, newLang) = Self.detectKind(for: url)
+
+        let oldId = file.id
+        let newId = url.absoluteString
+        let rekeyed = FileItem(
+            id: newId,
+            name: url.lastPathComponent,
+            folder: url.deletingLastPathComponent().lastPathComponent,
+            kind: newKind,
+            lang: newLang,
+            body: file.body,
+            modified: Self.relativeDateString(Date()),
+            starred: file.starred,
+            url: url,
+            isDirty: false
+        )
+
+        if oldId != newId {
+            files[oldId] = nil
+            files[newId] = rekeyed
+            if let i = openTabIds.firstIndex(of: oldId) { openTabIds[i] = newId }
+            if activeTabId == oldId { activeTabId = newId }
+            if let mode = mdModes[oldId] { mdModes[newId] = mode; mdModes[oldId] = nil }
+        } else {
+            files[oldId] = rekeyed
+        }
+        recordRecent(url)
+    }
+
+    /// "now" / "5m ago" / "Mon" style label used in the sidebar Recent list.
+    private static func relativeDateString(_ date: Date) -> String {
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .short
+        return f.localizedString(for: date, relativeTo: Date())
     }
 
     func toggleSidebar() { sidebarOpen.toggle() }
+
+    /// Request the markdown preview scroll to the given heading anchor.
+    /// Called from the sidebar Outline tab.
+    func jumpToAnchor(_ anchor: String) {
+        activeAnchor = anchor
+        anchorJumpCounter &+= 1
+    }
 
     func toggleMdMode() {
         guard isMd else { return }

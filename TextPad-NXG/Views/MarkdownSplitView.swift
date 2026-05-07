@@ -170,15 +170,17 @@ struct MarkdownSplitView: View {
             paneHeader("Preview")
             Divider().opacity(0.5)
             MarkdownWebView(
-                source:         file.body,
-                fontSize:       fontSize,
-                lineLength:     Int(appState.settings.lineLength),
-                accentColor:    appState.accentColor,
-                colorScheme:    colorScheme,
-                scrollFraction: appState.settings.syncScroll ? scrollFraction : nil,
+                source:            file.body,
+                fontSize:          fontSize,
+                lineLength:        Int(appState.settings.lineLength),
+                accentColor:       appState.accentColor,
+                colorScheme:       colorScheme,
+                scrollFraction:    appState.settings.syncScroll ? scrollFraction : nil,
                 onScrollFraction: { f in
                     if appState.settings.syncScroll { scrollFraction = f }
-                }
+                },
+                anchorToJump:      appState.activeAnchor,
+                anchorJumpRequest: appState.anchorJumpCounter
             )
         }
         .background(DesignTokens.bgPane(colorScheme).opacity(0.7))

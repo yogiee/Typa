@@ -16,6 +16,20 @@ struct AppCommands: Commands {
             .keyboardShortcut("o", modifiers: .command)
         }
 
+        CommandGroup(replacing: .saveItem) {
+            Button("Save") {
+                appState.saveActive()
+            }
+            .keyboardShortcut("s", modifiers: .command)
+            .disabled(appState.activeFile == nil)
+
+            Button("Save As…") {
+                appState.saveActiveAs()
+            }
+            .keyboardShortcut("s", modifiers: [.command, .shift])
+            .disabled(appState.activeFile == nil)
+        }
+
         CommandMenu("View") {
             Button(appState.sidebarOpen ? "Hide Sidebar" : "Show Sidebar") {
                 appState.toggleSidebar()

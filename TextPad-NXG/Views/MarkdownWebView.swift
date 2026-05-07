@@ -25,6 +25,12 @@ struct MarkdownWebView: NSViewRepresentable {
     /// Called when the user scrolls the preview directly (preview → source).
     var onScrollFraction: ((CGFloat) -> Void)? = nil
 
+    /// Anchor (heading slug) the preview should scroll to. Paired with
+    /// `anchorJumpRequest` (a counter) so repeated clicks on the same
+    /// heading always re-trigger the scroll.
+    var anchorToJump:      String? = nil
+    var anchorJumpRequest: Int     = 0
+
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     func makeNSView(context: Context) -> WKWebView {
@@ -39,8 +45,9 @@ struct MarkdownWebView: NSViewRepresentable {
         wv.uiDelegate = context.coordinator
 
         context.coordinator.webView = wv
-        context.coordinator.lastRenderedHTML = renderedHTML()
-        wv.loadHTMLString(context.coordinator.lastRenderedHTML, baseURL: nil)
+        context.coordinator.lastSource = source
+        context.coordinator.lastCSSKey = cssKey
+        wv.loadHTMLString(fullPageHTML(), baseURL: nil)
         return wv
     }
 
@@ -49,18 +56,46 @@ struct MarkdownWebView: NSViewRepresentable {
         // see the current bindings.
         context.coordinator.parent = self
 
-        let html = renderedHTML()
-        if html != context.coordinator.lastRenderedHTML {
-            context.coordinator.lastRenderedHTML = html
-            // didFinish will restore scroll position (source-driven if syncScroll
-            // is on, else the user's last preview scroll position).
-            wv.loadHTMLString(html, baseURL: nil)
+        let cssKeyNow = cssKey
+        if cssKeyNow != context.coordinator.lastCSSKey {
+            // Theme/font/accent/length change → CSS needs updating, full reload.
+            // didFinish restores scroll position from lastPreviewFraction (or
+            // source-driven scrollFraction if syncScroll is on).
+            context.coordinator.lastCSSKey = cssKeyNow
+            context.coordinator.lastSource = source
+            wv.loadHTMLString(fullPageHTML(), baseURL: nil)
+        } else if source != context.coordinator.lastSource {
+            // Only the markdown source changed → swap body via JS. Avoids the
+            // navigation flash and preserves scroll position natively.
+            context.coordinator.lastSource = source
+            let bodyHTML = MarkdownEngine.renderBodyHTML(source)
+            // Use JSONEncoder to safely escape arbitrary HTML for embedding
+            // as a JS string literal — no manual quote/backslash juggling.
+            if let data = try? JSONEncoder().encode([bodyHTML]),
+               let jsArray = String(data: data, encoding: .utf8) {
+                wv.evaluateJavaScript("window.tpReplaceBody(\(jsArray)[0]);",
+                                      completionHandler: nil)
+            }
         } else if let f = scrollFraction {
             context.coordinator.applyScroll(fraction: f)
         }
+
+        // Anchor jump (sidebar outline click). Counter-based so repeated
+        // clicks on the same heading still trigger a re-scroll.
+        if anchorJumpRequest != context.coordinator.lastAnchorRequest,
+           let anchor = anchorToJump {
+            context.coordinator.lastAnchorRequest = anchorJumpRequest
+            if let data = try? JSONEncoder().encode([anchor]),
+               let jsArray = String(data: data, encoding: .utf8) {
+                wv.evaluateJavaScript(
+                    "document.getElementById(\(jsArray)[0])?.scrollIntoView({behavior:'smooth',block:'start'});",
+                    completionHandler: nil
+                )
+            }
+        }
     }
 
-    private func renderedHTML() -> String {
+    private func fullPageHTML() -> String {
         MarkdownEngine.renderHTML(
             source,
             colorScheme: colorScheme,
@@ -70,14 +105,22 @@ struct MarkdownWebView: NSViewRepresentable {
         )
     }
 
+    /// Hash of the CSS-affecting inputs. When this changes, we must reload
+    /// the page; when only `source` differs, we can swap body HTML in place.
+    private var cssKey: String {
+        "\(colorScheme)|\(fontSize)|\(lineLength)|\(accentColor.hexString)"
+    }
+
     // MARK: - Coordinator
 
     @MainActor
     final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
         var parent: MarkdownWebView
         weak var webView: WKWebView?
-        var lastRenderedHTML: String = ""
-        var lastPreviewFraction: CGFloat = 0   // user's last reading position
+        var lastSource: String = ""           // last source we rendered
+        var lastCSSKey: String = ""           // last CSS-affecting input set
+        var lastPreviewFraction: CGFloat = 0  // user's last reading position
+        var lastAnchorRequest: Int = 0        // last anchor-jump counter we acted on
         var ignorePreviewScrollUntil: Date = .distantPast
 
         init(_ parent: MarkdownWebView) { self.parent = parent }

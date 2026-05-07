@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		A10001 /* TextPadApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10001 /* TextPadApp.swift */; };
 		A10002 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10002 /* AppState.swift */; };
+		A22002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B22002 /* AppDelegate.swift */; };
 		A10003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10003 /* ContentView.swift */; };
 		A10004 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10004 /* Assets.xcassets */; };
 		A20001 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20001 /* DesignTokens.swift */; };
@@ -38,6 +39,7 @@
 /* Begin PBXFileReference section */
 		B10001 /* TextPadApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextPadApp.swift; sourceTree = "<group>"; };
 		B10002 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		B22002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		B10003 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		B10004 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B10005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -104,6 +106,7 @@
 			children = (
 				B10001 /* TextPadApp.swift */,
 				B10002 /* AppState.swift */,
+				B22002 /* AppDelegate.swift */,
 				B20004 /* AppCommands.swift */,
 				B10005 /* Info.plist */,
 			);
@@ -241,6 +244,7 @@
 			files = (
 				A10001 /* TextPadApp.swift in Sources */,
 				A10002 /* AppState.swift in Sources */,
+				A22002 /* AppDelegate.swift in Sources */,
 				A10003 /* ContentView.swift in Sources */,
 				A20001 /* DesignTokens.swift in Sources */,
 				A20002 /* MarkdownEngine.swift in Sources */,

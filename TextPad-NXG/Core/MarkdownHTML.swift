@@ -13,8 +13,7 @@ extension MarkdownEngine {
         accentHex: String,
         themeName: String = "default"
     ) -> String {
-        let blocks  = parseBlocks(source)
-        let bodyHTML = blocks.map { renderBlockHTML($0) }.joined(separator: "\n")
+        let bodyHTML = renderBodyHTML(source)
         let css     = stylesheet(colorScheme: colorScheme,
                                   fontSize: fontSize,
                                   lineLength: lineLength,
@@ -33,15 +32,20 @@ extension MarkdownEngine {
         \(bodyHTML)
         </article>
         <script>
+        // Live-update helper — replaces the body markup without a navigation,
+        // so editing the source doesn't flash the preview blank or reset
+        // scroll position.
+        window.tpReplaceBody = function(html) {
+            const el = document.querySelector('.markdown-body');
+            if (el) el.innerHTML = html;
+        };
         // Two-way scroll-sync helper. Source → preview drives scrollTop;
         // preview → source posts a 0..1 fraction back via webkit handler.
         window.tpSetScrollFraction = function(f) {
             const max = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0);
             window.scrollTo(0, f * max);
         };
-        let __tpSyncing = false;
         window.addEventListener('scroll', function() {
-            if (__tpSyncing) return;
             const max = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
             const f = Math.min(Math.max(window.scrollY / max, 0), 1);
             if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tpScroll) {
@@ -52,6 +56,12 @@ extension MarkdownEngine {
         </body>
         </html>
         """
+    }
+
+    /// Renders just the inner block markup, suitable for swapping into
+    /// `.markdown-body` via JavaScript without reloading the page.
+    static func renderBodyHTML(_ source: String) -> String {
+        parseBlocks(source).map { renderBlockHTML($0) }.joined(separator: "\n")
     }
 
     // MARK: - Block rendering

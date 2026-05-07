@@ -69,9 +69,15 @@ struct TitleBarView: View {
                     Text(file.name)
                         .font(DesignTokens.font(13, weight: .medium))
                         .foregroundStyle(DesignTokens.fg(colorScheme))
-                    Text("— \(file.folder)")
-                        .font(DesignTokens.font(13))
-                        .foregroundStyle(DesignTokens.fgMute(colorScheme))
+                    if file.isDirty {
+                        Text("• Edited")
+                            .font(DesignTokens.font(11))
+                            .foregroundStyle(DesignTokens.fgMute(colorScheme))
+                    } else {
+                        Text("— \(file.folder)")
+                            .font(DesignTokens.font(13))
+                            .foregroundStyle(DesignTokens.fgMute(colorScheme))
+                    }
                 }
             } else {
                 Text("TextPad-NXG")
@@ -150,7 +156,7 @@ struct TitleBarView: View {
                         .font(DesignTokens.font(12, weight: isActive ? .medium : .regular))
                         .foregroundStyle(isActive ? DesignTokens.fg(colorScheme) : DesignTokens.fgMute(colorScheme))
                         .lineLimit(1)
-                    Color.clear.frame(width: 18)  // reserved for close button
+                    Color.clear.frame(width: 18)  // reserved for close button / dirty dot
                 }
                 .padding(.horizontal, 10)
                 .frame(height: 34)
@@ -159,15 +165,25 @@ struct TitleBarView: View {
             }
             .buttonStyle(.plain)
 
-            // Close button overlaid at trailing edge
+            // Close / dirty indicator. Single button, same 14×14 hit area;
+            // shows a filled dot when the file has unsaved changes, × otherwise
+            // (VS Code / Sublime convention — no layout shift between states).
             Button {
-                appState.closeTab(id: file.id)
+                appState.closeTabConfirmingSave(id: file.id)
             } label: {
-                Text("×")
-                    .font(.system(size: 12))
-                    .foregroundStyle(DesignTokens.fgMute(colorScheme))
-                    .frame(width: 14, height: 14)
-                    .contentShape(Rectangle())
+                Group {
+                    if file.isDirty {
+                        Circle()
+                            .fill(DesignTokens.fgMute(colorScheme))
+                            .frame(width: 8, height: 8)
+                    } else {
+                        Text("×")
+                            .font(.system(size: 12))
+                            .foregroundStyle(DesignTokens.fgMute(colorScheme))
+                    }
+                }
+                .frame(width: 14, height: 14)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .padding(.trailing, 10)

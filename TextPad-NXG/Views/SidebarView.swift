@@ -134,7 +134,7 @@ struct SidebarView: View {
 
     private func outlineRow(_ item: OutlineItem) -> some View {
         Button {
-            appState.activeAnchor = item.anchor
+            appState.jumpToAnchor(item.anchor)
         } label: {
             HStack(spacing: 6) {
                 Circle()
