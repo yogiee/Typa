@@ -1,15 +1,15 @@
 <p align="center">
-  <img src="TextPad-NXG/Resources/Assets.xcassets/AppIcon.appiconset/textpad-icon-light-128.png" width="128" alt="TextPad-NXG icon"/>
+  <img src="Typa/Resources/Assets.xcassets/AppIcon.appiconset/textpad-icon-light-128.png" width="128" alt="Typa icon"/>
 </p>
 
-<h1 align="center">TextPad-NXG</h1>
+<h1 align="center">Typa</h1>
 
 <p align="center">
   A small, focused text editor for macOS that reads Markdown beautifully.
 </p>
 
 <p align="center">
-  <a href="https://github.com/yogiee/TextPad-NXG/releases/latest"><img src="https://img.shields.io/github/v/release/yogiee/TextPad-NXG?style=flat-square" alt="Latest release"/></a>
+  <a href="https://github.com/yogiee/Typa/releases/latest"><img src="https://img.shields.io/github/v/release/yogiee/Typa?style=flat-square" alt="Latest release"/></a>
   <img src="https://img.shields.io/badge/macOS-14%2B-blue?style=flat-square" alt="macOS 14+"/>
   <img src="https://img.shields.io/badge/SwiftUI-AppKit-orange?style=flat-square" alt="SwiftUI · AppKit"/>
 </p>
@@ -30,29 +30,29 @@ It deliberately avoids becoming an IDE — no plugin marketplace, no language se
 
 - **Markdown is first-class.** `.md` files open in **rendered read mode** by default. One click toggles to **split: source + live preview**.
 - **Plain text editor** with line numbers, focus mode, smart paste, and a monospace type stack.
-- **Code viewer** for `.js`, `.ts`, `.tsx`, `.jsx`, `.php`, `.css`, `.html`, `.json`, `.py`, `.sh` with syntax highlighting — read-friendly, not an IDE.
+- **Code viewer** for `.js`, `.ts`, `.tsx`, `.jsx`, `.php`, `.css`, `.html`, `.json`, `.py`, `.sh`, `.yaml`, `.toml`, `.xml`, `.swift`, `.rb`, `.sql`, `.rs`, `.go`, `.ini`, `.env`, `Dockerfile` with syntax highlighting — read-friendly, not an IDE.
 - **RTF** files open in a paged document view with a togglable formatting toolbar.
 
 ---
 
 ## Installation
 
-Download the latest **TextPad-NXG-x.y.z.dmg** from the [Releases](https://github.com/yogiee/TextPad-NXG/releases/latest) page, mount it, and drag **TextPad-NXG** to your Applications folder.
+Download the latest **Typa-x.y.z.dmg** from the [Releases](https://github.com/yogiee/Typa/releases/latest) page, mount it, and drag **Typa** to your Applications folder.
 
-> **Note:** TextPad-NXG is ad-hoc signed and not notarized. On first launch, right-click the app icon → **Open**, then confirm the dialog. macOS only asks once.
+> **Note:** Typa is ad-hoc signed and not notarized. On first launch, right-click the app icon → **Open**, then confirm the dialog. macOS only asks once.
 
 ---
 
 ## Building from Source
 
 ```bash
-git clone https://github.com/yogiee/TextPad-NXG.git
-cd TextPad-NXG
-./scripts/build-app.sh         # → build/TextPad-NXG.app
-./scripts/make-dmg.sh          # → build/TextPad-NXG-x.y.z.dmg (optional)
+git clone https://github.com/yogiee/Typa.git
+cd Typa
+./scripts/build-app.sh         # → build/Typa.app
+./scripts/make-dmg.sh          # → build/Typa-x.y.z.dmg (optional)
 ```
 
-Or open `TextPad-NXG.xcodeproj` in Xcode and run.
+Or open `Typa.xcodeproj` in Xcode and run.
 
 ---
 
@@ -75,13 +75,18 @@ Or open `TextPad-NXG.xcodeproj` in Xcode and run.
 - **Code blocks share the editor's syntax highlighter** — no JS dependency, no asset bundles
 - Markdown source toolbar: H, B, I, S, link, inline code, code block, bullet/numbered/task list, blockquote, HR
 
+### Find & Replace
+
+- **Find bar** (`⌘F`) — floats over the document with match count, prev/next navigation, and highlighted matches
+- **Find & Replace** (`⌘⌥F`) — replace disabled in Markdown read mode (preview is read-only); enabled in split mode and all non-markdown files
+- Matches highlighted in plain text, code, and rendered Markdown preview simultaneously
+
 ### Chrome
 
 - **Custom title bar** with traffic lights, sidebar toggle, file title, Read/Edit mode toggle, find bar, theme picker, and settings
 - **Tab bar** with file-kind chips (`M↓` `JS` `TXT` `RTF`) and close buttons
 - **Sidebar** (`⌘1`): Files (Starred + Recent) and Outline (markdown headings)
 - **Status bar**: file kind, word/char/line/read-time counts, focus toggle, encoding
-- **Find bar** (`⌘F` / `⌘⌥F`) — floats over the document with match count and replace
 - **Quick Switcher** (`⌘K`): fuzzy file picker across open files
 
 ---
@@ -121,7 +126,7 @@ Native macOS preferences window (`⌘,`) with four tabs:
 - No other external dependencies
 
 ```
-TextPad-NXG/
+Typa/
   App/         — TextPadApp, AppState, AppDelegate, AppCommands, Info.plist
   Core/        — DesignTokens, MarkdownEngine, MarkdownHTML, MdEdit, SyntaxHighlighter
   Views/       — ContentView, TitleBarView, SidebarView, StatusBarView,
@@ -131,7 +136,7 @@ TextPad-NXG/
   Utilities/   — WindowConfigurator
   Resources/   — Assets.xcassets, Fonts/
 scripts/
-  build-app.sh — release build → build/TextPad-NXG.app
+  build-app.sh — release build → build/Typa.app
   make-dmg.sh  — DMG packaging with drag-to-Applications layout
 ```
 
@@ -139,18 +144,19 @@ scripts/
 
 ## Roadmap
 
-- Code signing + notarization (so first launch doesn't need right-click → Open)
 - Export to HTML and PDF
 - Theme system for the markdown preview
+- Auto-syntax detection on untitled files
+- Markdown formatting behaviours (auto-close brackets, list continuation, tab→spaces)
 
-TextPad-NXG is intentionally feature-complete as a focused editor. No plugin system, no language-server integration, no AI-assistant features are planned.
+Typa is intentionally feature-complete as a focused editor. No plugin system, no language-server integration, no AI-assistant features are planned.
 
 ---
 
 ## Credits
 
 - **JetBrains Mono** — the type stack, bundled under the [SIL Open Font License 1.1](https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt)
-- **MacDown** — referenced for its preferences taxonomy and editor → WKWebView pipeline pattern. TextPad-NXG is a Swift/SwiftUI rewrite, not a fork.
+- **MacDown** — referenced for its preferences taxonomy and editor → WKWebView pipeline pattern. Typa is a Swift/SwiftUI rewrite, not a fork.
 - **Sparkle** — over-the-air update framework
 
 ---
