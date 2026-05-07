@@ -5,7 +5,7 @@ import AppKit
 ///
 /// SwiftUI doesn't expose a "before terminate" closure, so we drop down to a
 /// classic NSApplicationDelegate registered via `@NSApplicationDelegateAdaptor`
-/// in `TextPadApp`. The reference to AppState is wired in once the first
+/// in `TypaApp`. The reference to AppState is wired in once the first
 /// window appears.
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
