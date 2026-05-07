@@ -50,6 +50,13 @@ POTENTIAL CONCERNS:
 - [any risks or things to verify]
 ```
 
+### Git workflow
+
+- **Never commit directly to `main`**. All work goes on a feature branch.
+- **Branch naming**: `v{version}-{short-description}` — e.g. `v0.4.0-settings-persistence`, `v0.3.1-open-with-fix`. Matches the convention used in sister apps IPMSGX and WallP.
+- **PR before merge**: push the branch, open a PR against `main`, merge only after review.
+- When starting any non-trivial task, create the branch first before touching any files.
+
 ### Core rules
 
 - **Analyze before acting — MANDATORY**: When the user reports an issue or bug, STOP. Present root cause analysis and possible fixes first. Do NOT make any code changes until the user explicitly approves the approach. No exceptions.
