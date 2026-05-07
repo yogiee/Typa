@@ -10,8 +10,10 @@
 		A10001 /* TextPadApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10001 /* TextPadApp.swift */; };
 		A10002 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10002 /* AppState.swift */; };
 		A22002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B22002 /* AppDelegate.swift */; };
+		A22003 /* UpdaterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B22003 /* UpdaterService.swift */; };
 		A10003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10003 /* ContentView.swift */; };
 		A10004 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10004 /* Assets.xcassets */; };
+		A30001 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = P30002 /* Sparkle */; };
 		A20001 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20001 /* DesignTokens.swift */; };
 		A20002 /* MarkdownEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20002 /* MarkdownEngine.swift */; };
 		A20003 /* SyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20003 /* SyntaxHighlighter.swift */; };
@@ -40,6 +42,7 @@
 		B10001 /* TextPadApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextPadApp.swift; sourceTree = "<group>"; };
 		B10002 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		B22002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		B22003 /* UpdaterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdaterService.swift; sourceTree = "<group>"; };
 		B10003 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		B10004 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B10005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -74,6 +77,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A30001 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -107,6 +111,7 @@
 				B10001 /* TextPadApp.swift */,
 				B10002 /* AppState.swift */,
 				B22002 /* AppDelegate.swift */,
+				B22003 /* UpdaterService.swift */,
 				B20004 /* AppCommands.swift */,
 				B10005 /* Info.plist */,
 			);
@@ -188,6 +193,9 @@
 			dependencies = (
 			);
 			name = "TextPad-NXG";
+			packageProductDependencies = (
+				P30002 /* Sparkle */,
+			);
 			productName = "TextPad-NXG";
 			productReference = B10099 /* TextPad-NXG.app */;
 			productType = "com.apple.product-type.application";
@@ -219,6 +227,9 @@
 			productRefGroup = D10099 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
+			packageReferences = (
+				P30001 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			targets = (
 				E10001 /* TextPad-NXG */,
 			);
@@ -245,6 +256,7 @@
 				A10001 /* TextPadApp.swift in Sources */,
 				A10002 /* AppState.swift in Sources */,
 				A22002 /* AppDelegate.swift in Sources */,
+				A22003 /* UpdaterService.swift in Sources */,
 				A10003 /* ContentView.swift in Sources */,
 				A20001 /* DesignTokens.swift in Sources */,
 				A20002 /* MarkdownEngine.swift in Sources */,
@@ -456,6 +468,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		P30001 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		P30002 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = P30001 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = E10099 /* Project object */;
 }

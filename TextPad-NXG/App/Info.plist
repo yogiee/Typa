@@ -30,6 +30,12 @@
 	<string>NSApplication</string>
 	<key>ATSApplicationFontsPath</key>
 	<string>Fonts</string>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/yogiee/TextPad-NXG/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>k47OPDePNJN2Iyiu28Hz73RzNv/GHyryeSPWvGhv1+c=</string>
+	<key>SUEnableInstallerLauncherService</key>
+	<true/>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>

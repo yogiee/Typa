@@ -167,6 +167,8 @@ private struct MarkdownTab: View {
 // MARK: - About
 
 private struct AboutTab: View {
+    @State private var updater = UpdaterService.shared
+
     private var appName: String {
         Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "TextPad-NXG"
     }
@@ -178,17 +180,16 @@ private struct AboutTab: View {
     }
 
     var body: some View {
-        VStack(spacing: 18) {
-            Spacer().frame(height: 8)
+        VStack(spacing: 14) {
+            Spacer().frame(height: 4)
 
-            // App icon
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
-                .frame(width: 96, height: 96)
+                .frame(width: 88, height: 88)
 
             VStack(spacing: 4) {
                 Text(appName)
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(.system(size: 20, weight: .semibold))
                 Text("Version \(appVersion) (\(buildNumber))")
                     .font(.callout)
                     .foregroundStyle(.secondary)
@@ -199,18 +200,39 @@ private struct AboutTab: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+                .padding(.horizontal, 36)
 
             Link(destination: URL(string: "https://github.com/yogiee/TextPad-NXG")!) {
                 Label("View on GitHub", systemImage: "arrow.up.right.square")
             }
+
+            // Updates
+            VStack(spacing: 8) {
+                Button("Check for Updates…") {
+                    updater.checkForUpdates()
+                }
+                .controlSize(.regular)
+
+                Picker("", selection: Binding(
+                    get: { updater.updateMode },
+                    set: { updater.updateMode = $0 }
+                )) {
+                    Text("Install updates automatically").tag(0)
+                    Text("Download and ask before installing").tag(1)
+                    Text("Don't check for updates").tag(2)
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .frame(width: 280)
+            }
+            .padding(.top, 4)
 
             Spacer()
 
             Text("© 2026 · Built with Swift and SwiftUI")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
-                .padding(.bottom, 14)
+                .padding(.bottom, 12)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

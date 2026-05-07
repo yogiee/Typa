@@ -4,6 +4,7 @@ import SwiftUI
 struct TextPadApp: App {
     @State private var appState = AppState()
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    private let updater = UpdaterService.shared   // starts Sparkle
 
     var body: some Scene {
         Window("TextPad-NXG", id: "main") {
