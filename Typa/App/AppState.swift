@@ -315,6 +315,12 @@ final class AppState {
         if f.body == body { return }
         f.body = body
         f.isDirty = true
+        // Auto-promote untitled plain-text files once content reveals their kind.
+        if f.url == nil, f.kind == .plainText,
+           let (kind, lang) = Self.detectKindFromContent(body) {
+            f.kind = kind
+            f.lang = lang
+        }
         files[id] = f
     }
 
@@ -375,6 +381,103 @@ final class AppState {
                                   modified: Self.relativeDateString(Date()),
                                   url: url)
         }
+    }
+
+    /// Content-based kind detection for untitled files. Returns nil when no
+    /// confident signal is found — false negatives (stay plain text) are
+    /// preferred over false positives (wrong promotion).
+    /// Requires ≥ 3 non-empty lines so single-line snippets don't trigger.
+    static func detectKindFromContent(_ body: String) -> (FileKind, String?)? {
+        let lines = body.components(separatedBy: "\n")
+        let trimmed = lines.map { $0.trimmingCharacters(in: .whitespaces) }
+        let nonEmpty = trimmed.filter { !$0.isEmpty }
+        guard nonEmpty.count >= 3 else { return nil }
+
+        let first = nonEmpty[0]
+
+        // Shebang — single line is enough, signal is unambiguous
+        if first.hasPrefix("#!/") {
+            if first.contains("python")            { return (.code, "py") }
+            if first.contains("node")              { return (.code, "js") }
+            if first.contains("bash") || first.contains("/sh") { return (.code, "sh") }
+            if first.contains("ruby")              { return (.code, "rb") }
+        }
+
+        // HTML doctype / root tag
+        let firstLower = first.lowercased()
+        if firstLower.hasPrefix("<!doctype html") || firstLower.hasPrefix("<html") {
+            return (.code, "html")
+        }
+
+        // Go: package declaration is always the first non-comment line
+        if first.hasPrefix("package ") {
+            return (.code, "go")
+        }
+
+        // Markdown: needs 2+ distinct block-level signals
+        let mdSignals = nonEmpty.filter {
+            $0.hasPrefix("# ") || $0.hasPrefix("## ") || $0.hasPrefix("### ") ||
+            $0.hasPrefix("- ") || $0.hasPrefix("* ") || $0.hasPrefix("> ") ||
+            $0.hasPrefix("```") || $0 == "---" || $0.hasPrefix("| ")
+        }
+        if mdSignals.count >= 2 { return (.markdown, nil) }
+
+        // SQL: a SELECT/INSERT/UPDATE/CREATE/DROP at line start is unambiguous
+        let sqlKeywords = ["SELECT ", "INSERT ", "UPDATE ", "DELETE ", "CREATE ", "DROP ", "ALTER "]
+        let sqlCount = nonEmpty.filter { line in
+            let up = line.uppercased()
+            return sqlKeywords.contains(where: { up.hasPrefix($0) })
+        }.count
+        if sqlCount >= 1 { return (.code, "sql") }
+
+        // Swift-specific markers (before JS/Python which share let/import)
+        let swiftSpecific = nonEmpty.filter {
+            $0.hasPrefix("import SwiftUI") || $0.hasPrefix("import Foundation") ||
+            $0.hasPrefix("import AppKit") || $0.hasPrefix("@State") ||
+            $0.hasPrefix("@Published") || $0.hasPrefix("@Observable") ||
+            $0.hasPrefix("@Environment") || $0.contains("-> some View") ||
+            $0.hasPrefix("struct ") && $0.hasSuffix(": View {")
+        }.count
+        if swiftSpecific >= 1 { return (.code, "swift") }
+
+        // Rust: fn/use/impl/let mut are fairly Rust-specific together
+        let rustSignals = nonEmpty.filter {
+            $0.hasPrefix("fn ") || $0.hasPrefix("pub fn") || $0.hasPrefix("use ") ||
+            $0.hasPrefix("impl ") || $0.hasPrefix("let mut ") || $0.hasPrefix("mod ")
+        }.count
+        if rustSignals >= 2 { return (.code, "rs") }
+
+        // Python: def/class with colon, or import/from combos
+        let pySignals = nonEmpty.filter {
+            ($0.hasPrefix("def ") && $0.hasSuffix(":")) ||
+            ($0.hasPrefix("class ") && $0.hasSuffix(":")) ||
+            $0.hasPrefix("from ") || $0.hasPrefix("import ")
+        }.count
+        if pySignals >= 2 { return (.code, "py") }
+
+        // JavaScript/TypeScript: require 2+ signals to avoid false positives
+        let jsSignals = nonEmpty.filter {
+            $0.hasPrefix("const ") || $0.hasPrefix("function ") ||
+            $0.hasPrefix("export ") || $0.hasPrefix("import ") ||
+            $0.contains("=> {") || $0.contains("require(")
+        }.count
+        if jsSignals >= 2 { return (.code, "js") }
+
+        // CSS: selector { ... } structure
+        let cssSignals = nonEmpty.filter {
+            $0.hasSuffix("{") || ($0.contains(":") && $0.hasSuffix(";"))
+        }.count
+        if cssSignals >= 3 { return (.code, "css") }
+
+        // YAML: key: value pairs with no spaces in key, ≥ 3 lines
+        let yamlSignals = nonEmpty.filter { line in
+            guard let colon = line.firstIndex(of: ":") else { return false }
+            let key = String(line[line.startIndex..<colon])
+            return !key.isEmpty && !key.contains(" ") && !key.hasPrefix("-")
+        }.count
+        if yamlSignals >= 3 { return (.code, "yaml") }
+
+        return nil
     }
 
     /// Single source of truth for mapping a file URL to (kind, lang). Used
