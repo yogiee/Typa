@@ -21,6 +21,22 @@
         <language>en</language>
 
         <item>
+            <title>Version 0.3.2</title>
+            <sparkle:releaseNotesLink>
+                https://github.com/yogiee/TextPad-NXG/releases/tag/v0.3.2
+            </sparkle:releaseNotesLink>
+            <pubDate>Wed, 07 May 2026 00:00:00 +0000</pubDate>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure
+                url="https://github.com/yogiee/TextPad-NXG/releases/download/v0.3.2/TextPad-NXG-0.3.2.dmg"
+                sparkle:version="5"
+                sparkle:shortVersionString="0.3.2"
+                sparkle:edSignature="z0IdNeZFvsg/HroQznqiU/k5Sbx1nS+Lq74OEfzKzHA2SRbwqvSFEQ1pFJaph8CRR3Lc+YGLLQ9KAIU1QyxgAA=="
+                length="2678510"
+                type="application/octet-stream" />
+        </item>
+
+        <item>
             <title>Version 0.3.1</title>
             <sparkle:releaseNotesLink>
                 https://github.com/yogiee/TextPad-NXG/releases/tag/v0.3.1
