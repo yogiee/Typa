@@ -45,8 +45,8 @@ enum FileKind: Equatable {
 
 // MARK: - Settings
 
-enum MdMode: String { case read, split }
-enum SplitOrientation: String { case vertical, horizontal }
+enum MdMode: String, Codable { case read, split }
+enum SplitOrientation: String, Codable { case vertical, horizontal }
 enum SidebarMode { case files, outline }
 
 struct AppSettings {
@@ -62,6 +62,50 @@ struct AppSettings {
     var mdDefault: MdMode = .read
     var syncScroll: Bool = true
     var accent: AccentName = .teal
+}
+
+// RawRepresentable uses JSONSerialization (not JSONEncoder/Codable) to avoid
+// the stdlib RawRepresentable+Codable circular encode path.
+extension AppSettings: RawRepresentable {
+    var rawValue: String {
+        let d: [String: Any] = [
+            "theme":                theme.rawValue,
+            "fontName":             fontName,
+            "fontSize":             fontSize,
+            "lineHeightMultiplier": lineHeightMultiplier,
+            "lineLength":           lineLength,
+            "splitOrientation":     splitOrientation.rawValue,
+            "focusMode":            focusMode,
+            "showLineNumbers":      showLineNumbers,
+            "smartPaste":           smartPaste,
+            "mdDefault":            mdDefault.rawValue,
+            "syncScroll":           syncScroll,
+            "accent":               accent.rawValue
+        ]
+        guard let data = try? JSONSerialization.data(withJSONObject: d),
+              let str = String(data: data, encoding: .utf8)
+        else { return "{}" }
+        return str
+    }
+
+    init?(rawValue: String) {
+        guard let data = rawValue.data(using: .utf8),
+              let d = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return nil }
+        let def = AppSettings()
+        theme                = (d["theme"] as? String).flatMap(AppTheme.init)           ?? def.theme
+        fontName             = d["fontName"] as? String                                 ?? def.fontName
+        fontSize             = d["fontSize"] as? Double                                 ?? def.fontSize
+        lineHeightMultiplier = d["lineHeightMultiplier"] as? Double                     ?? def.lineHeightMultiplier
+        lineLength           = d["lineLength"] as? Double                               ?? def.lineLength
+        splitOrientation     = (d["splitOrientation"] as? String).flatMap(SplitOrientation.init) ?? def.splitOrientation
+        focusMode            = d["focusMode"] as? Bool                                  ?? def.focusMode
+        showLineNumbers      = d["showLineNumbers"] as? Bool                            ?? def.showLineNumbers
+        smartPaste           = d["smartPaste"] as? Bool                                 ?? def.smartPaste
+        mdDefault            = (d["mdDefault"] as? String).flatMap(MdMode.init)         ?? def.mdDefault
+        syncScroll           = d["syncScroll"] as? Bool                                 ?? def.syncScroll
+        accent               = (d["accent"] as? String).flatMap(AccentName.init)        ?? def.accent
+    }
 }
 
 // MARK: - App state
@@ -93,7 +137,9 @@ final class AppState {
     var smartPasteToast: String? = nil
 
     // MARK: Settings
-    var settings: AppSettings = AppSettings()
+    var settings: AppSettings = AppState.loadSettings() {
+        didSet { persistSettings() }
+    }
 
     // MARK: Computed
 
@@ -139,6 +185,21 @@ final class AppState {
         recentURLs.compactMap { url in
             allFiles.first { $0.url == url }
         }
+    }
+
+    // MARK: Settings persistence
+
+    private static let settingsKey = "tp.appSettings"
+
+    private static func loadSettings() -> AppSettings {
+        guard let raw = UserDefaults.standard.string(forKey: settingsKey),
+              let settings = AppSettings(rawValue: raw)
+        else { return AppSettings() }
+        return settings
+    }
+
+    private func persistSettings() {
+        UserDefaults.standard.set(settings.rawValue, forKey: Self.settingsKey)
     }
 
     // MARK: Recent files persistence

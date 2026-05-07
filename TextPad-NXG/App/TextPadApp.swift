@@ -12,15 +12,20 @@ struct TextPadApp: App {
                 .environment(appState)
                 .preferredColorScheme(appState.settings.theme.colorScheme)
                 .onAppear {
-                    // Hand the AppDelegate a reference so its
-                    // applicationShouldTerminate hook can check for unsaved
-                    // changes before the app quits.
                     appDelegate.appState = appState
 
-                    if appState.recentURLs.isEmpty && appState.files.isEmpty {
+                    // Drain any files that arrived via "Open With" before the
+                    // window appeared (application(_:open:) fires early).
+                    let hadPendingFiles = !appDelegate.pendingURLs.isEmpty
+                    appDelegate.openPendingURLs()
+
+                    if hadPendingFiles {
+                        // A real file was opened — hydrate recents for the
+                        // sidebar but skip the sample-file seed.
+                        appState.hydrateRecentFiles()
+                    } else if appState.recentURLs.isEmpty && appState.files.isEmpty {
                         // First-run: seed the sidebar with sample content so
-                        // the empty state isn't completely barren. Subsequent
-                        // launches restore the user's actual recent files.
+                        // the empty state isn't completely barren.
                         appState.loadSampleFiles()
                     } else {
                         appState.hydrateRecentFiles()

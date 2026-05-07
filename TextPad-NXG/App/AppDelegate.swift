@@ -14,6 +14,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// we don't fight @Observable's own retention.
     weak var appState: AppState?
 
+    /// URLs queued by `application(_:open:)` before the window's `onAppear`
+    /// has had a chance to wire `appState`. Drained by `openPendingURLs()`.
+    var pendingURLs: [URL] = []
+
+    /// Called by macOS when the app is launched via "Open With" or when a file
+    /// is dropped onto the Dock icon. Also called while the app is already
+    /// running (appState is live and the URLs are loaded immediately).
+    func application(_ application: NSApplication, open urls: [URL]) {
+        if let state = appState {
+            urls.forEach { state.loadFile(url: $0) }
+        } else {
+            pendingURLs.append(contentsOf: urls)
+        }
+    }
+
+    /// Drains `pendingURLs` into AppState. Called from `onAppear` after
+    /// `appState` has been wired up.
+    func openPendingURLs() {
+        guard let state = appState, !pendingURLs.isEmpty else { return }
+        pendingURLs.forEach { state.loadFile(url: $0) }
+        pendingURLs.removeAll()
+    }
+
     /// Quit the app when the last window closes (matches the user's mental
     /// model for a single-window editor; without this the menu bar stays
     /// up and ⌘Q is required to actually exit).

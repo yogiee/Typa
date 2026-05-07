@@ -52,17 +52,21 @@ POTENTIAL CONCERNS:
 
 ### Core rules
 
+- **Analyze before acting — MANDATORY**: When the user reports an issue or bug, STOP. Present root cause analysis and possible fixes first. Do NOT make any code changes until the user explicitly approves the approach. No exceptions.
+- **LSP + Context7 only — MANDATORY**: Use LSP for all symbol lookups, go-to-definition, and code navigation. Use Context7 for all library/API/framework documentation. NEVER use grep or trained knowledge for these purposes. These are hard requirements, not preferences.
 - **Scope discipline**: touch only what you're asked to touch. No unsolicited refactors, no removing comments you don't understand, no deleting seemingly-unused code without asking.
 - **Simplicity first**: prefer the boring, obvious solution. If you build 1000 lines and 100 would suffice, you have failed.
 - **Dead code hygiene**: after a refactor, list now-unreachable code and ask whether to remove it — don't leave corpses, don't delete without asking.
 - **Push back**: when an approach has clear problems, say so directly, propose an alternative, then accept the human's decision.
 - **No sycophancy**: "Of course!" followed by implementing a bad idea helps no one.
 
-## Tooling preferences for code tasks
+## Tooling preferences for code tasks — MANDATORY
 
-- **Symbol lookup / go-to-definition**: use **LSP** (`LSP` tool) — do not grep for function/class/type definitions when LSP can resolve them precisely.
-- **Library docs / API reference**: use **Context7** (`mcp__plugin_context7_context7__query-docs` / `resolve-library-id`) — even for well-known libraries, because training data may be stale.
-- **Grep / Bash `grep`**: reserve for searching raw strings, log output, or when LSP and Context7 don't apply.
+These are hard requirements. Do not deviate.
+
+- **Symbol lookup / go-to-definition**: use **LSP** (`LSP` tool). Never grep for function/class/type definitions.
+- **Library docs / API reference**: use **Context7** (`mcp__plugin_context7_context7__query-docs` / `resolve-library-id`) for every library lookup. Never rely on training data for API references — it may be stale.
+- **Grep / Bash `grep`**: only for raw string searches in output/logs, or when LSP and Context7 genuinely cannot help. Not a substitute for either.
 
 ## What this repo is
 

@@ -109,7 +109,7 @@ enum DesignTokens {
 
 // MARK: - Accent colors
 
-enum AccentName: String, CaseIterable {
+enum AccentName: String, CaseIterable, Codable {
     case teal, amber, violet, rose
 
     func color(isDark: Bool) -> Color {
@@ -200,7 +200,7 @@ struct SyntaxColors {
 
 // MARK: - App theme
 
-enum AppTheme: String, CaseIterable {
+enum AppTheme: String, CaseIterable, Codable {
     case light, dark, system
 
     var colorScheme: ColorScheme? {
