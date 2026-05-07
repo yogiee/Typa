@@ -36,7 +36,6 @@ struct TextPadApp: App {
         Settings {
             SettingsView()
                 .environment(appState)
-                .frame(width: 480)
         }
     }
 }

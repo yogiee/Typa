@@ -3,14 +3,14 @@
   Sparkle appcast for TextPad-NXG.
   Hosted at: https://raw.githubusercontent.com/yogiee/TextPad-NXG/main/appcast.xml
 
-  Release flow:
-    1. Bump CFBundleShortVersionString and CFBundleVersion in the .xcodeproj
-    2. ./scripts/make-dmg.sh             → builds + packages + prints
-                                           sparkle:edSignature and length
-    3. gh release create vX.Y.Z build/TextPad-NXG-X.Y.Z.dmg --title …
-    4. Add a new <item> block below (newest first) with the values printed by
-       step 2 + the GitHub release download URL, then commit + push this file.
-       Sparkle clients poll this URL and will pick up the new version.
+  Release flow (full doc in scripts/make-dmg.sh and README):
+    1. Bump CFBundleShortVersionString + CFBundleVersion in the project.
+    2. Run ./scripts/make-dmg.sh — prints sparkle:edSignature and length.
+    3. Upload the DMG to a GitHub Release via gh release create.
+    4. Add a new item block below (newest first) with those values + the
+       GitHub release download URL, then commit + push this file.
+  XML comments can not contain a double-hyphen sequence, so the literal
+  shell flags are described in prose above.
 -->
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"
      xmlns:dc="http://purl.org/dc/elements/1.1/">

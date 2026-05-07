@@ -6,8 +6,13 @@ struct TitleBarView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.openSettings) private var openSettings
 
-    // Measured at runtime to match the actual traffic-light center Y
-    @State private var rowHeight: CGFloat = 30
+    // Fixed top-row height. Matches the natural traffic-light vertical
+    // center on macOS 14+ (lights are at ~y=14, height 14, so the row
+    // needs to be ~32 for them to look centered). Using a constant
+    // instead of measuring at runtime — the runtime path was sometimes
+    // measuring the wrong window (e.g. settings) and collapsing the
+    // top row.
+    private let rowHeight: CGFloat = 32
 
     var body: some View {
         @Bindable var state = appState
@@ -19,25 +24,6 @@ struct TitleBarView: View {
             Divider().opacity(0.7)
         }
         .background(DesignTokens.bgElev(colorScheme))
-        .onAppear {
-            // Defer one run-loop cycle so WindowConfigurator's fullSizeContentView
-            // is applied before we read the button position.
-            DispatchQueue.main.async { measureRowHeight() }
-        }
-    }
-
-    private func measureRowHeight() {
-        guard let window = NSApp.keyWindow ?? NSApp.mainWindow,
-              let close = window.standardWindowButton(.closeButton),
-              let content = window.contentView else { return }
-        let btnInContent = close.convert(close.bounds, to: content)
-        // NSHostingView (SwiftUI root) is flipped — Y is already top-down.
-        let centerYFromTop = content.isFlipped
-            ? btnInContent.midY
-            : content.frame.height - btnInContent.midY
-        // clamp to sane range so a bad reading can't break the layout
-        let measured = min(max(ceil(centerYFromTop * 2), 26), 52)
-        if abs(rowHeight - measured) > 0.5 { rowHeight = measured }
     }
 
     // MARK: Top row
