@@ -65,12 +65,13 @@ struct PlainTextEditorView: View {
     }
 }
 
-// MARK: - Gutter view (wrap-aware)
+// MARK: - Gutter view (Canvas-based, draw-only-visible)
 
-// Each gutter row spans the full wrapped height of its logical line, so a
-// logical line that wraps to N visual segments shows ONE line number followed
-// by (N-1) lineHeights of empty gutter — matching the way VS Code, Sublime,
-// Xcode, etc. render their gutters.
+// Canvas renders only the line numbers that fall within the visible viewport.
+// Previously a ForEach/VStack created one Text view per logical line, which
+// forced SwiftUI to build O(total-lines) nodes on every scroll and cursor move.
+// Now we iterate the array once, skip rows above/below the viewport, and only
+// call context.resolve() for the ~30-50 visible rows.
 struct GutterView: View {
     let lineSegments: [Int]
     let activeLine:   Int
@@ -82,33 +83,36 @@ struct GutterView: View {
     let colorScheme:  ColorScheme
 
     var body: some View {
-        // GeometryReader absorbs the proposed size without letting children's
-        // intrinsic heights propagate upward — this is what was locking the
-        // window minimum height to the editor's content height.
-        GeometryReader { _ in
-            VStack(spacing: 0) {
-                ForEach(Array(lineSegments.enumerated()), id: \.offset) { i, segs in
-                    Text("\(i + 1)")
-                        .font(DesignTokens.font(fontSize - 2))
-                        .foregroundStyle(
-                            i == activeLine
-                                ? accentColor
-                                : DesignTokens.fgFaint(colorScheme)
-                        )
-                        // Line number sits in a single lineHeight cell aligned
-                        // with the FIRST visual segment of the logical line.
-                        .frame(width: 36, height: lineHeight, alignment: .trailing)
-                        .padding(.trailing, 8)
-                        // Wrapped continuation occupies the remaining height
-                        // as empty gutter space.
-                        .frame(height: CGFloat(max(segs, 1)) * lineHeight,
-                               alignment: .top)
+        Canvas { context, size in
+            var cumY: CGFloat = topInset - scrollOffset
+
+            for (i, segs) in lineSegments.enumerated() {
+                let rowHeight = CGFloat(max(segs, 1)) * lineHeight
+
+                // Skip rows fully above the viewport — just advance the cursor
+                if cumY + rowHeight <= 0 {
+                    cumY += rowHeight
+                    continue
                 }
+                // Stop once we've passed the bottom of the viewport
+                if cumY >= size.height { break }
+
+                let isActive = (i == activeLine)
+                let label = Text("\(i + 1)")
+                    .font(DesignTokens.font(fontSize - 2))
+                    .foregroundStyle(isActive ? accentColor : DesignTokens.fgFaint(colorScheme))
+
+                let resolved = context.resolve(label)
+                // Right-edge at x=28 (36pt column − 8pt trailing pad),
+                // vertically centered in the first lineHeight of this row.
+                context.draw(resolved,
+                             at: CGPoint(x: 28, y: cumY + lineHeight / 2),
+                             anchor: UnitPoint(x: 1.0, y: 0.5))
+
+                cumY += rowHeight
             }
-            .padding(.top, topInset)
-            .offset(y: -scrollOffset)
-            .allowsHitTesting(false)
         }
+        .allowsHitTesting(false)
         .frame(width: 44)
         .clipped()
         .background(DesignTokens.bgElev(colorScheme))
@@ -117,6 +121,24 @@ struct GutterView: View {
                 .fill(DesignTokens.line(colorScheme))
                 .frame(width: 0.5)
         }
+    }
+}
+
+// MARK: - Style fingerprint
+
+// Compared before every applyStyle call. If nothing changed, we skip the O(n)
+// attribute walk over the entire text storage — the biggest per-keystroke cost.
+private struct StyleStamp: Equatable {
+    var fontSize:    CGFloat
+    var fontName:    String
+    var multiplier:  CGFloat
+    var colorScheme: ColorScheme
+    var accentColor: Color
+
+    static func make(from p: EditorNSTextView) -> StyleStamp {
+        StyleStamp(fontSize: p.fontSize, fontName: p.fontName,
+                   multiplier: p.lineHeightMultiplier,
+                   colorScheme: p.colorScheme, accentColor: p.accentColor)
     }
 }
 
@@ -199,35 +221,46 @@ struct EditorNSTextView: NSViewRepresentable {
     }
 
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
-        // Keep the coordinator's struct snapshot fresh so its delegate
-        // callbacks (textDidChange, etc.) read the current bindings instead
-        // of the stale ones captured at makeCoordinator time. Without this,
-        // textDidChange after CMD+Z would read a stale parent.text and the
-        // bulk-replace path below would resurrect the pre-undo content.
         context.coordinator.parent = self
 
         guard let tv = scrollView.documentView as? NSTextView else { return }
-        if tv.string != text {
+
+        let textChanged = tv.string != text
+        if textChanged {
             let sel = tv.selectedRanges
             tv.string = text
             tv.selectedRanges = sel
-            // tv.string = ... registers an undo whose target points back through
-            // the SwiftUI binding setter. The undo manager dereferences a stale
-            // pointer on CMD+Z → EXC_BAD_ACCESS. Drop those entries; cross-file /
-            // external bulk replacements aren't user-undoable anyway.
             tv.undoManager?.removeAllActions()
+            // Layout needs to settle before line-segment counts are accurate.
+            DispatchQueue.main.async {
+                context.coordinator.emitLineSegments()
+            }
         }
-        applyStyle(tv)
-        applyFocusMode(tv, activeLine: context.coordinator.activeLine)
+
+        // Skip the O(n) attribute walk when font/size/scheme/accent are unchanged.
+        let newStamp = StyleStamp.make(from: self)
+        let styleChanged = newStamp != context.coordinator.lastStyleStamp
+        if textChanged || styleChanged {
+            applyStyle(tv)
+            context.coordinator.lastStyleStamp = newStamp
+        }
+
+        // Focus mode: re-apply when toggled, when the active line moved (while
+        // focus is on), or when style changed (applyStyle reset foreground colors).
+        let focusModeChanged = context.coordinator.lastFocusModeActive != focusMode
+        let focusLineChanged = context.coordinator.activeLine != context.coordinator.lastFocusActiveLine
+        let needsFocusUpdate = focusModeChanged
+            || (focusMode && (styleChanged || textChanged || focusLineChanged))
+        if needsFocusUpdate {
+            applyFocusMode(tv, activeLine: context.coordinator.activeLine)
+            context.coordinator.lastFocusModeActive = focusMode
+            context.coordinator.lastFocusActiveLine = context.coordinator.activeLine
+        }
+
         applyFindHighlights(tv, context.coordinator)
 
-        // Drive scroll position from outside (preview → source sync)
         if let f = sourceScrollFraction {
             context.coordinator.applyExternalScrollFraction(f, scrollView: scrollView)
-        }
-
-        DispatchQueue.main.async {
-            context.coordinator.emitLineSegments()
         }
     }
 
@@ -270,9 +303,15 @@ struct EditorNSTextView: NSViewRepresentable {
         tv.textColor = fg
         tv.insertionPointColor = NSColor(accentColor)
 
-        let lh = DesignTokens.lineHeight(for: fontSize,
-                                          fontName: fontName,
-                                          multiplier: lineHeightMultiplier)
+        let lh        = DesignTokens.lineHeight(for: fontSize,
+                                                  fontName: fontName,
+                                                  multiplier: lineHeightMultiplier)
+        let naturalLH = NSLayoutManager().defaultLineHeight(for: font)
+        // min=max=lh places extra space ABOVE the glyph (text sits at the
+        // bottom of a tall cell). Raise the glyph upward by half the extra
+        // space to achieve equal padding above and below.
+        let baselineOff: CGFloat = (lh - naturalLH) / 2
+
         let ps = NSMutableParagraphStyle()
         ps.minimumLineHeight = lh
         ps.maximumLineHeight = lh
@@ -280,9 +319,20 @@ struct EditorNSTextView: NSViewRepresentable {
 
         guard let ts = tv.textStorage else { return }
         let r = NSRange(location: 0, length: ts.length)
-        ts.addAttribute(.font,            value: font, range: r)
-        ts.addAttribute(.foregroundColor, value: fg,   range: r)
-        ts.addAttribute(.paragraphStyle,  value: ps,   range: r)
+        ts.beginEditing()
+        ts.addAttribute(.font,            value: font,        range: r)
+        ts.addAttribute(.foregroundColor, value: fg,          range: r)
+        ts.addAttribute(.paragraphStyle,  value: ps,          range: r)
+        ts.addAttribute(.baselineOffset,  value: baselineOff, range: r)
+        ts.endEditing()
+        tv.setNeedsDisplay(tv.bounds)
+
+        tv.typingAttributes = [
+            .font:            font,
+            .foregroundColor: fg,
+            .paragraphStyle:  ps,
+            .baselineOffset:  baselineOff
+        ]
     }
 
     func applyFocusMode(_ tv: NSTextView, activeLine: Int) {
@@ -329,14 +379,13 @@ struct EditorNSTextView: NSViewRepresentable {
         var lastFindMatches: [NSRange] = []
         var lastFindIndex:   Int       = -2
         var lastFindTrigger: Int       = -2
-        // Suppress own scroll-fraction emission for a brief window after a
-        // programmatic scroll triggered by an external driver (preview → source).
-        // Keeps the bidirectional sync from oscillating.
-        var ignoreScrollUntil: Date = .distantPast
-        // Last fraction we've already applied to the editor; used to skip
-        // redundant programmatic scrolls when the same value comes around the
-        // loop (e.g., source emitted X, state holds X, source receives X back).
+        var ignoreScrollUntil:   Date    = .distantPast
         var lastAppliedFraction: CGFloat = .nan
+        // Style fingerprint — guards the O(n) applyStyle attribute walk.
+        fileprivate var lastStyleStamp: StyleStamp? = nil
+        // Focus-mode guards — avoid O(n) dim pass when nothing relevant changed.
+        var lastFocusModeActive: Bool? = nil
+        var lastFocusActiveLine: Int   = -2
 
         init(_ parent: EditorNSTextView) { self.parent = parent }
 
@@ -346,12 +395,38 @@ struct EditorNSTextView: NSViewRepresentable {
             guard let tv = textView else { return }
             if parent.text != tv.string { parent.text = tv.string }
             updateCaretLine(tv)
+            restoreTypingAttributes(tv)
             DispatchQueue.main.async { [weak self] in self?.emitLineSegments() }
         }
 
         func textViewDidChangeSelection(_ notification: Notification) {
             guard let tv = textView else { return }
             updateCaretLine(tv)
+            // NSTextView resets typingAttributes on every selection change,
+            // deriving them from the character at the insertion point. Re-apply
+            // the full set so font, paragraph style, and baseline offset are
+            // always correct — especially on empty lines with no surrounding chars.
+            restoreTypingAttributes(tv)
+        }
+
+        private func restoreTypingAttributes(_ tv: NSTextView) {
+            let font      = DesignTokens.monoFont(size: parent.fontSize, name: parent.fontName)
+            let fg        = NSColor(parent.colorScheme == .dark
+                ? DesignTokens.fg(.dark) : DesignTokens.fg(.light))
+            let lh        = DesignTokens.lineHeight(for: parent.fontSize,
+                                                     fontName: parent.fontName,
+                                                     multiplier: parent.lineHeightMultiplier)
+            let naturalLH = NSLayoutManager().defaultLineHeight(for: font)
+            let baselineOff: CGFloat = (lh - naturalLH) / 2
+            let ps        = NSMutableParagraphStyle()
+            ps.minimumLineHeight = lh
+            ps.maximumLineHeight = lh
+            tv.typingAttributes = [
+                .font:            font,
+                .foregroundColor: fg,
+                .paragraphStyle:  ps,
+                .baselineOffset:  baselineOff
+            ]
         }
 
         @objc func scrolled(_ notification: Notification) {
@@ -393,8 +468,15 @@ struct EditorNSTextView: NSViewRepresentable {
         }
 
         @objc func frameChanged(_ notification: Notification) {
-            // Wrap may have changed; recompute segment counts.
-            DispatchQueue.main.async { [weak self] in self?.emitLineSegments() }
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.emitLineSegments()
+                // Refresh the active-line highlight so it tracks the new
+                // line height immediately (e.g. when multiplier changes).
+                if let tv = self.textView {
+                    self.updateActiveLineHighlight(tv, line: self.activeLine)
+                }
+            }
         }
 
         // MARK: Caret tracking
