@@ -100,6 +100,13 @@ enum DesignTokens {
         return ceil(NSLayoutManager().defaultLineHeight(for: font) * multiplier)
     }
 
+    /// Raw (unscaled) natural line height for a font — no ceil, no multiplier.
+    /// Used to compute the centering offset that aligns gutter numbers and
+    /// NSTextView glyphs when lineHeightMultiplier > 1.
+    static func naturalLineHeight(for fontSize: CGFloat, fontName: String? = nil) -> CGFloat {
+        NSLayoutManager().defaultLineHeight(for: monoFont(size: fontSize, name: fontName))
+    }
+
     // MARK: Shadows
 
     static let shadowSm = Color.black.opacity(0.04)

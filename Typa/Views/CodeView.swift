@@ -7,9 +7,10 @@ struct CodeView: View {
 
     let file: FileItem
 
-    @State private var activeLine:    Int     = 0
+    @State private var activeLine:     Int     = 0
     @State private var lineSegments:  [Int]   = [1]
     @State private var scrollOffset:  CGFloat = 0
+    @State private var activeLineDocY: CGFloat = -1
 
     private var fontSize:   CGFloat { CGFloat(appState.settings.fontSize) }
     private var fontName:   String  { appState.settings.fontName }
@@ -25,14 +26,15 @@ struct CodeView: View {
         HStack(spacing: 0) {
             if appState.settings.showLineNumbers {
                 GutterView(
-                    lineSegments: lineSegments,
-                    activeLine:   activeLine,
-                    scrollOffset: scrollOffset,
-                    lineHeight:   lineHeight,
-                    topInset:     16,
-                    fontSize:     fontSize,
-                    accentColor:  appState.accentColor,
-                    colorScheme:  colorScheme
+                    lineSegments:   lineSegments,
+                    activeLine:     activeLine,
+                    scrollOffset:   scrollOffset,
+                    activeLineDocY: activeLineDocY,
+                    lineHeight:     lineHeight,
+                    topInset:       16,
+                    fontSize:       fontSize,
+                    accentColor:    appState.accentColor,
+                    colorScheme:    colorScheme
                 )
             }
             CodeEditorNSTextView(
@@ -57,11 +59,32 @@ struct CodeView: View {
                 },
                 onLineSegments: { segs in
                     lineSegments = segs
+                },
+                onActiveLineDocY: { y in
+                    activeLineDocY = y
                 }
             )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(DesignTokens.bgPane(colorScheme))
+    }
+}
+
+// MARK: - Style fingerprint
+
+private struct StyleStamp: Equatable {
+    var fontSize:    CGFloat
+    var fontName:    String
+    var multiplier:  CGFloat
+    var colorScheme: ColorScheme
+    var accentColor: Color
+    var lang:        String
+
+    static func make(from p: CodeEditorNSTextView) -> StyleStamp {
+        StyleStamp(fontSize: p.fontSize, fontName: p.fontName,
+                   multiplier: p.lineHeightMultiplier,
+                   colorScheme: p.colorScheme, accentColor: p.accentColor,
+                   lang: p.lang)
     }
 }
 
@@ -82,6 +105,7 @@ struct CodeEditorNSTextView: NSViewRepresentable {
     var onCaretLineChange: ((Int, Int) -> Void)? = nil
     var onScrollChange:    ((CGFloat) -> Void)?  = nil
     var onLineSegments:    (([Int]) -> Void)?    = nil
+    var onActiveLineDocY:  ((CGFloat) -> Void)?  = nil
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -135,24 +159,33 @@ struct CodeEditorNSTextView: NSViewRepresentable {
     }
 
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
-        // See EditorNSTextView.updateNSView for the rationale on refreshing
-        // the coordinator's parent here.
         context.coordinator.parent = self
 
         guard let tv = scrollView.documentView as? NSTextView else { return }
-        if tv.string != text {
+
+        let textChanged = tv.string != text
+        if textChanged {
             let sel = tv.selectedRanges
             tv.string = text
             tv.selectedRanges = sel
-            // See PlainTextEditorView.updateNSView for rationale.
             tv.undoManager?.removeAllActions()
+            DispatchQueue.main.async {
+                context.coordinator.emitLineSegments()
+            }
         }
-        applyStyle(tv)
-        applyHighlighting(tv)
+
+        // Skip O(n) attribute walk + full tokenization pass when nothing changed.
+        // applyHighlighting always follows applyStyle because style resets all
+        // foreground colors to the base color, erasing syntax token colors.
+        let newStamp = StyleStamp.make(from: self)
+        let styleChanged = newStamp != context.coordinator.lastStyleStamp
+        if textChanged || styleChanged {
+            applyStyle(tv)
+            applyHighlighting(tv)
+            context.coordinator.lastStyleStamp = newStamp
+        }
+
         applyFindHighlights(tv, context.coordinator)
-        DispatchQueue.main.async {
-            context.coordinator.emitLineSegments()
-        }
     }
 
     func applyFindHighlights(_ tv: NSTextView, _ coord: Coordinator) {
@@ -179,8 +212,15 @@ struct CodeEditorNSTextView: NSViewRepresentable {
             let r = findMatches[currentMatchIndex]
             if r.location + r.length <= ts.length {
                 tv.scrollRangeToVisible(r)
-                tv.setSelectedRange(r)
-                DispatchQueue.main.async { tv.showFindIndicator(for: r) }
+                let notifyScroll = onScrollChange
+                DispatchQueue.main.async { [weak tv] in
+                    guard let tv else { return }
+                    if let sv = tv.enclosingScrollView {
+                        notifyScroll?(sv.contentView.bounds.origin.y)
+                    }
+                    tv.setSelectedRange(r)
+                    tv.showFindIndicator(for: r)
+                }
             }
         }
     }
@@ -194,9 +234,12 @@ struct CodeEditorNSTextView: NSViewRepresentable {
         tv.textColor = fg
         tv.insertionPointColor = NSColor(accentColor)
 
-        let lh = DesignTokens.lineHeight(for: fontSize,
-                                          fontName: fontName,
-                                          multiplier: lineHeightMultiplier)
+        let lh        = DesignTokens.lineHeight(for: fontSize,
+                                                  fontName: fontName,
+                                                  multiplier: lineHeightMultiplier)
+        let naturalLH = NSLayoutManager().defaultLineHeight(for: font)
+        let baselineOff: CGFloat = (lh - naturalLH) / 2
+
         let ps = NSMutableParagraphStyle()
         ps.minimumLineHeight = lh
         ps.maximumLineHeight = lh
@@ -204,9 +247,20 @@ struct CodeEditorNSTextView: NSViewRepresentable {
 
         guard let ts = tv.textStorage else { return }
         let r = NSRange(location: 0, length: ts.length)
-        ts.addAttribute(.font,            value: font, range: r)
-        ts.addAttribute(.foregroundColor, value: fg,   range: r)
-        ts.addAttribute(.paragraphStyle,  value: ps,   range: r)
+        ts.beginEditing()
+        ts.addAttribute(.font,            value: font,        range: r)
+        ts.addAttribute(.foregroundColor, value: fg,          range: r)
+        ts.addAttribute(.paragraphStyle,  value: ps,          range: r)
+        ts.addAttribute(.baselineOffset,  value: baselineOff, range: r)
+        ts.endEditing()
+        tv.setNeedsDisplay(tv.bounds)
+
+        tv.typingAttributes = [
+            .font:            font,
+            .foregroundColor: fg,
+            .paragraphStyle:  ps,
+            .baselineOffset:  baselineOff
+        ]
     }
 
     func applyHighlighting(_ tv: NSTextView) {
@@ -243,6 +297,7 @@ struct CodeEditorNSTextView: NSViewRepresentable {
         var lastFindMatches: [NSRange] = []
         var lastFindIndex:   Int       = -2
         var lastFindTrigger: Int       = -2
+        fileprivate var lastStyleStamp: StyleStamp? = nil
 
         init(_ parent: CodeEditorNSTextView) { self.parent = parent }
 
@@ -251,12 +306,37 @@ struct CodeEditorNSTextView: NSViewRepresentable {
             if parent.text != tv.string { parent.text = tv.string }
             parent.applyHighlighting(tv)
             updateCaretLine(tv)
+            restoreTypingAttributes(tv)
             DispatchQueue.main.async { [weak self] in self?.emitLineSegments() }
         }
 
         func textViewDidChangeSelection(_ notification: Notification) {
             guard let tv = textView else { return }
             updateCaretLine(tv)
+            // NSTextView resets typingAttributes on selection change. Re-apply
+            // so font, paragraph style, and baseline offset stay correct on
+            // empty lines and after cursor movement.
+            restoreTypingAttributes(tv)
+        }
+
+        private func restoreTypingAttributes(_ tv: NSTextView) {
+            let font      = DesignTokens.monoFont(size: parent.fontSize, name: parent.fontName)
+            let fg        = NSColor(parent.colorScheme == .dark
+                ? DesignTokens.fg(.dark) : DesignTokens.fg(.light))
+            let lh        = DesignTokens.lineHeight(for: parent.fontSize,
+                                                     fontName: parent.fontName,
+                                                     multiplier: parent.lineHeightMultiplier)
+            let naturalLH = NSLayoutManager().defaultLineHeight(for: font)
+            let baselineOff: CGFloat = (lh - naturalLH) / 2
+            let ps = NSMutableParagraphStyle()
+            ps.minimumLineHeight = lh
+            ps.maximumLineHeight = lh
+            tv.typingAttributes = [
+                .font:            font,
+                .foregroundColor: fg,
+                .paragraphStyle:  ps,
+                .baselineOffset:  baselineOff
+            ]
         }
 
         @objc func scrolled(_ notification: Notification) {
@@ -265,7 +345,13 @@ struct CodeEditorNSTextView: NSViewRepresentable {
         }
 
         @objc func frameChanged(_ notification: Notification) {
-            DispatchQueue.main.async { [weak self] in self?.emitLineSegments() }
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.emitLineSegments()
+                if let tv = self.textView {
+                    self.updateActiveLineHighlight(tv, line: self.activeLine)
+                }
+            }
         }
 
         private func updateCaretLine(_ tv: NSTextView) {
@@ -345,6 +431,8 @@ struct CodeEditorNSTextView: NSViewRepresentable {
                 ? NSColor.white.withAlphaComponent(0.04)
                 : NSColor.black.withAlphaComponent(0.035)).cgColor
             tv.layer?.insertSublayer(hl, at: 0)
+
+            parent.onActiveLineDocY?(frame.origin.y)
         }
 
         private func activeLineRect(_ tv: NSTextView, line: Int) -> CGRect {
