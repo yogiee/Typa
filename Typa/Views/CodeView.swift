@@ -7,9 +7,10 @@ struct CodeView: View {
 
     let file: FileItem
 
-    @State private var activeLine:    Int     = 0
+    @State private var activeLine:     Int     = 0
     @State private var lineSegments:  [Int]   = [1]
     @State private var scrollOffset:  CGFloat = 0
+    @State private var activeLineDocY: CGFloat = -1
 
     private var fontSize:   CGFloat { CGFloat(appState.settings.fontSize) }
     private var fontName:   String  { appState.settings.fontName }
@@ -25,14 +26,15 @@ struct CodeView: View {
         HStack(spacing: 0) {
             if appState.settings.showLineNumbers {
                 GutterView(
-                    lineSegments: lineSegments,
-                    activeLine:   activeLine,
-                    scrollOffset: scrollOffset,
-                    lineHeight:   lineHeight,
-                    topInset:     16,
-                    fontSize:     fontSize,
-                    accentColor:  appState.accentColor,
-                    colorScheme:  colorScheme
+                    lineSegments:   lineSegments,
+                    activeLine:     activeLine,
+                    scrollOffset:   scrollOffset,
+                    activeLineDocY: activeLineDocY,
+                    lineHeight:     lineHeight,
+                    topInset:       16,
+                    fontSize:       fontSize,
+                    accentColor:    appState.accentColor,
+                    colorScheme:    colorScheme
                 )
             }
             CodeEditorNSTextView(
@@ -57,6 +59,9 @@ struct CodeView: View {
                 },
                 onLineSegments: { segs in
                     lineSegments = segs
+                },
+                onActiveLineDocY: { y in
+                    activeLineDocY = y
                 }
             )
         }
@@ -100,6 +105,7 @@ struct CodeEditorNSTextView: NSViewRepresentable {
     var onCaretLineChange: ((Int, Int) -> Void)? = nil
     var onScrollChange:    ((CGFloat) -> Void)?  = nil
     var onLineSegments:    (([Int]) -> Void)?    = nil
+    var onActiveLineDocY:  ((CGFloat) -> Void)?  = nil
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -206,8 +212,15 @@ struct CodeEditorNSTextView: NSViewRepresentable {
             let r = findMatches[currentMatchIndex]
             if r.location + r.length <= ts.length {
                 tv.scrollRangeToVisible(r)
-                tv.setSelectedRange(r)
-                DispatchQueue.main.async { tv.showFindIndicator(for: r) }
+                let notifyScroll = onScrollChange
+                DispatchQueue.main.async { [weak tv] in
+                    guard let tv else { return }
+                    if let sv = tv.enclosingScrollView {
+                        notifyScroll?(sv.contentView.bounds.origin.y)
+                    }
+                    tv.setSelectedRange(r)
+                    tv.showFindIndicator(for: r)
+                }
             }
         }
     }
@@ -418,6 +431,8 @@ struct CodeEditorNSTextView: NSViewRepresentable {
                 ? NSColor.white.withAlphaComponent(0.04)
                 : NSColor.black.withAlphaComponent(0.035)).cgColor
             tv.layer?.insertSublayer(hl, at: 0)
+
+            parent.onActiveLineDocY?(frame.origin.y)
         }
 
         private func activeLineRect(_ tv: NSTextView, line: Int) -> CGRect {

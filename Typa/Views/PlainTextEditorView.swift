@@ -7,9 +7,10 @@ struct PlainTextEditorView: View {
 
     let file: FileItem
 
-    @State private var activeLine:    Int      = 0
+    @State private var activeLine:     Int      = 0
     @State private var lineSegments:  [Int]    = [1]   // wraps per logical line
     @State private var scrollOffset:  CGFloat  = 0
+    @State private var activeLineDocY: CGFloat = -1    // layout-manager Y; -1 = unset
 
     private var fontSize:   CGFloat { CGFloat(appState.settings.fontSize) }
     private var fontName:   String  { appState.settings.fontName }
@@ -24,14 +25,15 @@ struct PlainTextEditorView: View {
         HStack(spacing: 0) {
             if appState.settings.showLineNumbers {
                 GutterView(
-                    lineSegments: lineSegments,
-                    activeLine:   activeLine,
-                    scrollOffset: scrollOffset,
-                    lineHeight:   lineHeight,
-                    topInset:     16,
-                    fontSize:     fontSize,
-                    accentColor:  appState.accentColor,
-                    colorScheme:  colorScheme
+                    lineSegments:   lineSegments,
+                    activeLine:     activeLine,
+                    scrollOffset:   scrollOffset,
+                    activeLineDocY: activeLineDocY,
+                    lineHeight:     lineHeight,
+                    topInset:       16,
+                    fontSize:       fontSize,
+                    accentColor:    appState.accentColor,
+                    colorScheme:    colorScheme
                 )
             }
             EditorNSTextView(
@@ -57,6 +59,9 @@ struct PlainTextEditorView: View {
                 },
                 onLineSegments: { segs in
                     lineSegments = segs
+                },
+                onActiveLineDocY: { y in
+                    activeLineDocY = y
                 }
             )
         }
@@ -73,47 +78,82 @@ struct PlainTextEditorView: View {
 // Now we iterate the array once, skip rows above/below the viewport, and only
 // call context.resolve() for the ~30-50 visible rows.
 struct GutterView: View {
-    let lineSegments: [Int]
-    let activeLine:   Int
-    let scrollOffset: CGFloat
-    let lineHeight:   CGFloat
-    let topInset:     CGFloat
-    let fontSize:     CGFloat
-    let accentColor:  Color
-    let colorScheme:  ColorScheme
+    let lineSegments:   [Int]
+    let activeLine:     Int
+    let scrollOffset:   CGFloat
+    // Exact Y of the active line's top in NSTextView document coordinates.
+    // Derived from the layout manager via the same lineFragmentRect the
+    // active-line CALayer uses, so the number and highlight never drift apart
+    // even when lineSegments-based cumulative heights are slightly off.
+    // Negative sentinel (-1) means the value hasn't been set yet; falls back
+    // to the cumulative estimate in that case.
+    var activeLineDocY: CGFloat = -1   // -1 = sentinel, fall back to cumulative estimate
+    let lineHeight:     CGFloat
+    let topInset:       CGFloat
+    let fontSize:       CGFloat
+    let accentColor:    Color
+    let colorScheme:    ColorScheme
+
+    // Grows with the actual line count so numbers are never clipped.
+    // Minimum 3 digits; expands to 4, 5, … as needed (log files, etc.).
+    private var gutterWidth: CGFloat {
+        let digits = max(String(lineSegments.count).count, 3)
+        let font = NSFont(name: "JetBrains Mono", size: max(fontSize - 2, 8))
+            ?? NSFont.monospacedSystemFont(ofSize: max(fontSize - 2, 8), weight: .regular)
+        let charW = ("0" as NSString).size(withAttributes: [.font: font]).width
+        // digit columns + 8pt leading gap + 8pt trailing gap + 0.5pt border
+        return ceil(charW * CGFloat(digits)) + 16.5
+    }
 
     var body: some View {
         Canvas { context, size in
+            let textRightX = size.width - 8
+
+            // Pre-compute the cumulative Y for the active line using the same
+            // lineSegments array that the rest of the drawing loop uses. Then
+            // compare it against the layout manager's exact Y (activeLineDocY)
+            // to get a drift value. Applying drift uniformly to every number
+            // keeps them in sequential order while shifting the whole column to
+            // match actual text positions — even when lineSegments has missed
+            // some wrapped lines and accumulated error.
+            var activeCumY: CGFloat = topInset - scrollOffset
+            let activeIdx = min(max(activeLine, 0), lineSegments.count)
+            for i in 0..<activeIdx {
+                activeCumY += CGFloat(max(lineSegments[i], 1)) * lineHeight
+            }
+            let drift: CGFloat = activeLineDocY >= 0
+                ? (activeLineDocY - scrollOffset - activeCumY)
+                : 0
+
             var cumY: CGFloat = topInset - scrollOffset
 
             for (i, segs) in lineSegments.enumerated() {
                 let rowHeight = CGFloat(max(segs, 1)) * lineHeight
+                let drawTop = cumY + drift
 
                 // Skip rows fully above the viewport — just advance the cursor
-                if cumY + rowHeight <= 0 {
+                if drawTop + rowHeight <= 0 {
                     cumY += rowHeight
                     continue
                 }
                 // Stop once we've passed the bottom of the viewport
-                if cumY >= size.height { break }
+                if drawTop >= size.height { break }
 
                 let isActive = (i == activeLine)
-                let label = Text("\(i + 1)")
+                let label = Text(verbatim: String(i + 1))
                     .font(DesignTokens.font(fontSize - 2))
                     .foregroundStyle(isActive ? accentColor : DesignTokens.fgFaint(colorScheme))
 
                 let resolved = context.resolve(label)
-                // Right-edge at x=28 (36pt column − 8pt trailing pad),
-                // vertically centered in the first lineHeight of this row.
                 context.draw(resolved,
-                             at: CGPoint(x: 28, y: cumY + lineHeight / 2),
+                             at: CGPoint(x: textRightX, y: drawTop + lineHeight / 2),
                              anchor: UnitPoint(x: 1.0, y: 0.5))
 
                 cumY += rowHeight
             }
         }
         .allowsHitTesting(false)
-        .frame(width: 44)
+        .frame(width: gutterWidth)
         .clipped()
         .background(DesignTokens.bgElev(colorScheme))
         .overlay(alignment: .trailing) {
@@ -162,10 +202,14 @@ struct EditorNSTextView: NSViewRepresentable {
     var currentMatchIndex: Int      = -1
     var findScrollTrigger: Int      = -1
 
-    var onCaretLineChange: ((Int, Int) -> Void)? = nil
-    var onScrollChange:    ((CGFloat) -> Void)?  = nil
-    var onScrollFraction:  ((CGFloat) -> Void)?  = nil
-    var onLineSegments:    (([Int]) -> Void)?    = nil
+    var onCaretLineChange:  ((Int, Int) -> Void)? = nil
+    var onScrollChange:     ((CGFloat) -> Void)?  = nil
+    var onScrollFraction:   ((CGFloat) -> Void)?  = nil
+    var onLineSegments:     (([Int]) -> Void)?    = nil
+    // Exact Y of the active line's top in NSTextView document coordinates,
+    // derived from lineFragmentRect. Used by GutterView so the active line
+    // number and the CALayer highlight always draw from the same source.
+    var onActiveLineDocY:   ((CGFloat) -> Void)?  = nil
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -288,8 +332,15 @@ struct EditorNSTextView: NSViewRepresentable {
             let r = findMatches[currentMatchIndex]
             if r.location + r.length <= ts.length {
                 tv.scrollRangeToVisible(r)
-                tv.setSelectedRange(r)
-                DispatchQueue.main.async { tv.showFindIndicator(for: r) }
+                let notifyScroll = onScrollChange
+                DispatchQueue.main.async { [weak tv] in
+                    guard let tv else { return }
+                    if let sv = tv.enclosingScrollView {
+                        notifyScroll?(sv.contentView.bounds.origin.y)
+                    }
+                    tv.setSelectedRange(r)
+                    tv.showFindIndicator(for: r)
+                }
             }
         }
     }
@@ -564,6 +615,11 @@ struct EditorNSTextView: NSViewRepresentable {
                 ? NSColor.white.withAlphaComponent(0.04)
                 : NSColor.black.withAlphaComponent(0.035)).cgColor
             tv.layer?.insertSublayer(hl, at: 0)
+
+            // Emit the exact document-space Y so GutterView can draw the active
+            // line number at the identical position rather than relying on the
+            // lineSegments cumulative estimate (which drifts on wrapped lines).
+            parent.onActiveLineDocY?(frame.origin.y)
         }
 
         private func activeLineRect(_ tv: NSTextView, line: Int) -> CGRect {
