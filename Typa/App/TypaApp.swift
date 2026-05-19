@@ -20,15 +20,14 @@ struct TypaApp: App {
                     appDelegate.openPendingURLs()
 
                     if hadPendingFiles {
-                        // A real file was opened — hydrate recents for the
-                        // sidebar but skip the sample-file seed.
+                        // A real file was opened via Open With — hydrate recents,
+                        // don't also open a blank file.
                         appState.hydrateRecentFiles()
-                    } else if appState.recentURLs.isEmpty && appState.files.isEmpty {
-                        // First-run: seed the sidebar with sample content so
-                        // the empty state isn't completely barren.
-                        appState.loadSampleFiles()
                     } else {
+                        // Normal launch: populate recents list, then open a blank
+                        // document so the user lands directly in the editor.
                         appState.hydrateRecentFiles()
+                        appState.newFile()
                     }
                 }
         }

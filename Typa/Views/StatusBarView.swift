@@ -34,25 +34,31 @@ struct StatusBarView: View {
     // MARK: Mode chip
 
     private var modeChip: some View {
-        Group {
+        HStack(spacing: 5) {
+            glowDot
             if let file = appState.activeFile {
                 fileKindMenu(file: file)
             } else {
-                chipLabel("Ready")
-                    .padding(.horizontal, 10)
+                Text("Ready")
+                    .font(DesignTokens.font(11, weight: .medium))
+                    .foregroundStyle(DesignTokens.fgSoft(colorScheme))
             }
         }
+        .padding(.leading, 14)
+        .padding(.trailing, 10)
     }
 
-    private func chipLabel(_ text: String) -> some View {
-        HStack(spacing: 5) {
+    private var glowDot: some View {
+        ZStack {
+            Circle()
+                .fill(appState.accentColor.opacity(0.5))
+                .blur(radius: 3)
+                .frame(width: 9, height: 9)
             Circle()
                 .fill(appState.accentColor)
                 .frame(width: 5, height: 5)
-            Text(text)
-                .font(DesignTokens.font(11, weight: .medium))
-                .foregroundStyle(DesignTokens.fgSoft(colorScheme))
         }
+        .frame(width: 9, height: 9)
     }
 
     @ViewBuilder
@@ -87,8 +93,9 @@ struct StatusBarView: View {
             }
             .disabled(!canAutoDetect)
         } label: {
-            chipLabel(modeLabel)
-                .padding(.horizontal, 10)
+            Text(modeLabel)
+                .font(DesignTokens.font(11, weight: .medium))
+                .foregroundStyle(DesignTokens.fgSoft(colorScheme))
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
