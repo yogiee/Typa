@@ -189,8 +189,9 @@ struct EditorNSTextView: NSViewRepresentable {
     var fontSize:             CGFloat
     var fontName:             String  = "JetBrains Mono"
     var lineHeightMultiplier: CGFloat = 1.0
-    var isEditable:  Bool
-    var focusMode:   Bool
+    var isEditable:         Bool
+    var focusMode:          Bool
+    var markdownFormatting: Bool = false
     var accentColor: Color
     var colorScheme: ColorScheme
     /// External-driven scroll position (0..1). When set and different from
@@ -462,8 +463,22 @@ struct EditorNSTextView: NSViewRepresentable {
 
         func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
             let sel = textView.selectedRange()
-            guard sel.length > 0 else { return false }
             let str = textView.string as NSString
+
+            // Markdown-only behaviours (apply before the selection guard below)
+            if parent.markdownFormatting {
+                if commandSelector == #selector(NSTextView.insertNewline(_:)) {
+                    return handleMarkdownEnter(textView, str: str, sel: sel)
+                }
+                // Tab with no selection → 4 spaces
+                if commandSelector == #selector(NSTextView.insertTab(_:)), sel.length == 0 {
+                    textView.insertText("    ", replacementRange: sel)
+                    return true
+                }
+            }
+
+            // Selection indent/dedent (all modes)
+            guard sel.length > 0 else { return false }
             let lineRange = str.lineRange(for: sel)
 
             if commandSelector == #selector(NSTextView.insertTab(_:)) {
@@ -497,6 +512,97 @@ struct EditorNSTextView: NSViewRepresentable {
                 return true
             }
 
+            return false
+        }
+
+        // Returns the list/blockquote prefix of a line, or nil if none.
+        private func detectListPrefix(_ line: String) -> String? {
+            if line.hasPrefix("> ") { return "> " }
+            for marker in ["- ", "* ", "+ "] {
+                if line.hasPrefix(marker) { return marker }
+            }
+            // Ordered: "1. ", "12. " etc.
+            var i = line.startIndex
+            while i < line.endIndex && line[i].isNumber { i = line.index(after: i) }
+            if i > line.startIndex, i < line.endIndex {
+                let rest = String(line[i...])
+                if rest.hasPrefix(". ") { return String(line[..<i]) + ". " }
+            }
+            return nil
+        }
+
+        private func nextOrderedPrefix(from prefix: String) -> String? {
+            guard prefix.hasSuffix(". ") else { return nil }
+            let numPart = String(prefix.dropLast(2))
+            guard let n = Int(numPart) else { return nil }
+            return "\(n + 1). "
+        }
+
+        private func handleMarkdownEnter(_ tv: NSTextView, str: NSString, sel: NSRange) -> Bool {
+            let cursorPos = sel.location
+            let lineRange = str.lineRange(for: NSRange(location: cursorPos, length: 0))
+            let lineText  = str.substring(with: lineRange)
+            let line      = lineText.hasSuffix("\n") ? String(lineText.dropLast()) : lineText
+
+            guard let prefix = detectListPrefix(line) else { return false }
+
+            let afterPrefix = String(line.dropFirst(prefix.count))
+            let hasContent  = !afterPrefix.trimmingCharacters(in: .whitespaces).isEmpty
+
+            if !hasContent {
+                // Empty item — erase the prefix, leave cursor on the bare empty line.
+                // Deferred so NSTextView finishes event processing before we mutate.
+                let prefixRange = NSRange(location: lineRange.location,
+                                         length: (prefix as NSString).length)
+                DispatchQueue.main.async { tv.insertText("", replacementRange: prefixRange) }
+                return true
+            }
+
+            // Continue list: insert newline + prefix (incremented for ordered lists).
+            // Deferred for the same reason — avoids stale display below the insertion.
+            let nextPrefix  = nextOrderedPrefix(from: prefix) ?? prefix
+            let insertRange = NSRange(location: cursorPos, length: 0)
+            DispatchQueue.main.async { tv.insertText("\n" + nextPrefix, replacementRange: insertRange) }
+            return true
+        }
+
+        func textView(_ tv: NSTextView,
+                      shouldChangeTextIn range: NSRange,
+                      replacementString string: String?) -> Bool {
+            guard parent.markdownFormatting,
+                  let ch = string, ch.count == 1,
+                  tv.selectedRange().length == 0 else { return true }
+
+            let docStr   = tv.string as NSString
+            let nextChar = range.location < docStr.length
+                ? docStr.substring(with: NSRange(location: range.location, length: 1))
+                : ""
+
+            // Skip-over: typing a closing char when that same char is already next
+            let skipSet: Set<String> = [")", "]", "`"]
+            if skipSet.contains(ch) && nextChar == ch {
+                DispatchQueue.main.async { tv.setSelectedRange(NSRange(location: range.location + 1, length: 0)) }
+                return false
+            }
+
+            // Auto-close pairs (no " — smart-quote substitution interferes)
+            let pairs: [String: String] = ["(": ")", "[": "]", "`": "`"]
+            guard let closing = pairs[ch], nextChar != closing else { return true }
+
+            // For backtick: don't auto-close when the preceding char is also a backtick.
+            // This lets the user type ``` (code fence) after `` without triggering a
+            // second auto-close — skip-over handles the 2nd keystroke, this handles the 3rd.
+            if ch == "`" {
+                let prevChar = range.location > 0
+                    ? docStr.substring(with: NSRange(location: range.location - 1, length: 1))
+                    : ""
+                if prevChar == "`" { return true }
+            }
+
+            DispatchQueue.main.async {
+                tv.insertText(ch + closing, replacementRange: range)
+                tv.setSelectedRange(NSRange(location: range.location + 1, length: 0))
+            }
             return false
         }
 

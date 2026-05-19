@@ -77,6 +77,7 @@ struct MarkdownSplitView: View {
                     lineHeightMultiplier: lineHeightMultiplier,
                     isEditable:  true,
                     focusMode:   appState.settings.focusMode,
+                    markdownFormatting: true,
                     accentColor: appState.accentColor,
                     colorScheme: colorScheme,
                     sourceScrollFraction: appState.settings.syncScroll ? scrollFraction : nil,

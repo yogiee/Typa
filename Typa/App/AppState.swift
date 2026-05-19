@@ -323,8 +323,10 @@ final class AppState {
         f.kind = kind
         f.lang = lang
         files[id] = f
-        if kind == .markdown && mdModes[id] == nil {
-            mdModes[id] = settings.mdDefault
+        if kind == .markdown {
+            // User explicitly promoted this file to markdown — open in split (edit) mode
+            // so they can see the editor immediately, not just a blank preview.
+            mdModes[id] = .split
         }
     }
 
