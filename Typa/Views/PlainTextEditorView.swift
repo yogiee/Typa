@@ -101,13 +101,13 @@ struct GutterView: View {
         let font = NSFont(name: "JetBrains Mono", size: max(fontSize - 2, 8))
             ?? NSFont.monospacedSystemFont(ofSize: max(fontSize - 2, 8), weight: .regular)
         let charW = ("0" as NSString).size(withAttributes: [.font: font]).width
-        // digit columns + 8pt leading gap + 8pt trailing gap + 0.5pt border
-        return ceil(charW * CGFloat(digits)) + 16.5
+        // digit columns + 8pt leading gap + 13pt trailing gap + 0.5pt border
+        return ceil(charW * CGFloat(digits)) + 21.5
     }
 
     var body: some View {
         Canvas { context, size in
-            let textRightX = size.width - 8
+            let textRightX = size.width - 13
 
             // Pre-compute the cumulative Y for the active line using the same
             // lineSegments array that the rest of the drawing loop uses. Then
@@ -228,7 +228,7 @@ struct EditorNSTextView: NSViewRepresentable {
         tv.usesFindBar     = false
         tv.allowsUndo      = true
         tv.drawsBackground = false
-        tv.textContainerInset    = NSSize(width: 20, height: 16)
+        tv.textContainerInset    = NSSize(width: 12, height: 16)
         tv.isVerticallyResizable = true
         tv.isHorizontallyResizable = false
         tv.autoresizingMask = [.width]
@@ -458,6 +458,46 @@ struct EditorNSTextView: NSViewRepresentable {
             // the full set so font, paragraph style, and baseline offset are
             // always correct — especially on empty lines with no surrounding chars.
             restoreTypingAttributes(tv)
+        }
+
+        func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+            let sel = textView.selectedRange()
+            guard sel.length > 0 else { return false }
+            let str = textView.string as NSString
+            let lineRange = str.lineRange(for: sel)
+
+            if commandSelector == #selector(NSTextView.insertTab(_:)) {
+                let block = str.substring(with: lineRange)
+                let indented = block.components(separatedBy: "\n").map {
+                    $0.isEmpty ? $0 : "    " + $0
+                }.joined(separator: "\n")
+                if textView.shouldChangeText(in: lineRange, replacementString: indented) {
+                    textView.textStorage?.replaceCharacters(in: lineRange, with: indented)
+                    textView.didChangeText()
+                    textView.setSelectedRange(NSRange(location: lineRange.location,
+                                                     length: (indented as NSString).length))
+                }
+                return true
+            }
+
+            if commandSelector == #selector(NSTextView.insertBacktab(_:)) {
+                let block = str.substring(with: lineRange)
+                let dedented = block.components(separatedBy: "\n").map { line -> String in
+                    var s = line; var n = 0
+                    while n < 4, s.hasPrefix(" ") { s = String(s.dropFirst()); n += 1 }
+                    return s
+                }.joined(separator: "\n")
+                if dedented != block,
+                   textView.shouldChangeText(in: lineRange, replacementString: dedented) {
+                    textView.textStorage?.replaceCharacters(in: lineRange, with: dedented)
+                    textView.didChangeText()
+                    textView.setSelectedRange(NSRange(location: lineRange.location,
+                                                     length: (dedented as NSString).length))
+                }
+                return true
+            }
+
+            return false
         }
 
         private func restoreTypingAttributes(_ tv: NSTextView) {

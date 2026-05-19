@@ -99,41 +99,10 @@ struct EmptyStateView: View {
     }
 
     private var markIcon: some View {
-        Canvas { ctx, size in
-            let w = size.width, h = size.height
-            ctx.opacity = 0.45
-            ctx.stroke(
-                Path { p in
-                    p.addRoundedRect(in: CGRect(x: 6, y: 6, width: 28, height: 34),
-                                     cornerSize: CGSize(width: 2, height: 2))
-                },
-                with: .foreground,
-                lineWidth: 1.25
-            )
-            ctx.opacity = 1
-            ctx.fill(
-                Path { p in
-                    p.addRoundedRect(in: CGRect(x: 12, y: 12, width: 28, height: 34),
-                                     cornerSize: CGSize(width: 2, height: 2))
-                },
-                with: .color(DesignTokens.bgPane(colorScheme))
-            )
-            ctx.stroke(
-                Path { p in
-                    p.addRoundedRect(in: CGRect(x: 12, y: 12, width: 28, height: 34),
-                                     cornerSize: CGSize(width: 2, height: 2))
-                },
-                with: .foreground,
-                lineWidth: 1.25
-            )
-            let lineColor = GraphicsContext.Shading.color(DesignTokens.fg(colorScheme))
-            let lw: CGFloat = 1.25
-            ctx.stroke(Path { p in p.move(to: CGPoint(x: 17, y: 20)); p.addLine(to: CGPoint(x: 35, y: 20)) }, with: lineColor, lineWidth: lw)
-            ctx.stroke(Path { p in p.move(to: CGPoint(x: 17, y: 26)); p.addLine(to: CGPoint(x: 35, y: 26)) }, with: lineColor, lineWidth: lw)
-            ctx.stroke(Path { p in p.move(to: CGPoint(x: 17, y: 32)); p.addLine(to: CGPoint(x: 29, y: 32)) }, with: lineColor, lineWidth: lw)
-        }
-        .foregroundStyle(DesignTokens.fg(colorScheme))
-        .frame(width: 46, height: 46)
+        Image(nsImage: NSApp.applicationIconImage)
+            .resizable()
+            .interpolation(.high)
+            .frame(width: 72, height: 72)
     }
 
     private func actionBtn(label: String, kbd: String, isPrimary: Bool, action: @escaping () -> Void) -> some View {
