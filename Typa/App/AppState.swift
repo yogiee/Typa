@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import WebKit
 
 // MARK: - File model
 
@@ -669,6 +670,56 @@ final class AppState {
         }
     }
 
+    // MARK: Export
+
+    private var _pdfExportWebView: WKWebView?
+    private var _pdfExportDelegate: PDFExportNavigationDelegate?
+
+    func exportHTML() {
+        guard let file = activeFile else { return }
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = (file.name as NSString).deletingPathExtension + ".html"
+        panel.allowedContentTypes = [.html]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        let html = MarkdownEngine.renderExportHTML(
+            file.body,
+            fontSize:    CGFloat(settings.fontSize),
+            lineLength:  Int(settings.lineLength),
+            accentHex:   accentColor.hexString
+        )
+        try? html.write(to: url, atomically: true, encoding: .utf8)
+    }
+
+    func exportPDF() {
+        guard let file = activeFile else { return }
+        let html = MarkdownEngine.renderExportHTML(
+            file.body,
+            fontSize:    CGFloat(settings.fontSize),
+            lineLength:  Int(settings.lineLength),
+            accentHex:   accentColor.hexString
+        )
+        // Offscreen WKWebView — sized to a US-Letter page at 96 dpi
+        let wv = WKWebView(frame: NSRect(x: 0, y: 0, width: 816, height: 1056))
+        _pdfExportWebView = wv
+        let delegate = PDFExportNavigationDelegate { [weak self, weak wv] in
+            guard let wv else { return }
+            let info = NSPrintInfo.shared.copy() as! NSPrintInfo
+            info.horizontalPagination = .fit
+            info.verticalPagination   = .automatic
+            info.topMargin    = 36;  info.bottomMargin = 36
+            info.leftMargin   = 48;  info.rightMargin  = 48
+            let op = wv.printOperation(with: info)
+            op.showsPrintPanel    = true
+            op.showsProgressPanel = true
+            op.run()
+            self?._pdfExportWebView  = nil
+            self?._pdfExportDelegate = nil
+        }
+        _pdfExportDelegate = delegate
+        wv.navigationDelegate = delegate
+        wv.loadHTMLString(html, baseURL: nil)
+    }
+
     // MARK: Sample data
 
     func loadSampleFiles() {
@@ -686,6 +737,15 @@ final class AppState {
         openTabIds = ["readme", "notes", "main-js"]
         activeTabId = "readme"
         mdModes["readme"] = .read
+    }
+}
+
+// One-shot WKNavigationDelegate: fires callback on didFinish, holds no strong refs.
+private final class PDFExportNavigationDelegate: NSObject, WKNavigationDelegate {
+    private let onFinish: () -> Void
+    init(_ onFinish: @escaping () -> Void) { self.onFinish = onFinish }
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        onFinish()
     }
 }
 

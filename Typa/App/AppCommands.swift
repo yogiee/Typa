@@ -62,6 +62,18 @@ struct AppCommands: Commands {
             }
             .keyboardShortcut("e", modifiers: .command)
             .disabled(!appState.isMd)
+
+            Divider()
+
+            Button("Export as HTML…") {
+                appState.exportHTML()
+            }
+            .disabled(!appState.isMd)
+
+            Button("Export as PDF…") {
+                appState.exportPDF()
+            }
+            .disabled(!appState.isMd)
         }
     }
 }

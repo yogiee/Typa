@@ -103,6 +103,36 @@ extension MarkdownEngine {
         """
     }
 
+    /// Clean static HTML for file export — no JS helpers, always light mode.
+    static func renderExportHTML(
+        _ source: String,
+        fontSize: CGFloat,
+        lineLength: Int,
+        accentHex: String
+    ) -> String {
+        let bodyHTML = renderBodyHTML(source)
+        let css = stylesheet(colorScheme: .light,
+                             fontSize: fontSize,
+                             lineLength: lineLength,
+                             accentHex: accentHex,
+                             themeName: "default")
+        return """
+        <!doctype html>
+        <html>
+        <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width">
+        <style>\(css)</style>
+        </head>
+        <body>
+        <article class="markdown-body">
+        \(bodyHTML)
+        </article>
+        </body>
+        </html>
+        """
+    }
+
     /// Renders just the inner block markup, suitable for swapping into
     /// `.markdown-body` via JavaScript without reloading the page.
     static func renderBodyHTML(_ source: String) -> String {
