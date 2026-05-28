@@ -30,3 +30,4 @@ WORKSPACE/
 
 # Claude session state
 .claude/
+CLAUDE.md
