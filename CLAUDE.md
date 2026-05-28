@@ -75,6 +75,9 @@ These are hard requirements. Do not deviate.
 - **Library docs / API reference**: use **Context7** (`mcp__plugin_context7_context7__query-docs` / `resolve-library-id`) for every library lookup. Never rely on training data for API references — it may be stale.
 - **Grep / Bash `grep`**: only for raw string searches in output/logs, or when LSP and Context7 genuinely cannot help. Not a substitute for either.
 
+## Stack
+swift, swiftui, macos
+
 ## What this repo is
 
 Typa is a **native macOS app** built with **Swift and SwiftUI**. It is a streamlined markdown/text editor — not an IDE. The app is being built from scratch.
