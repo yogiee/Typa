@@ -46,16 +46,16 @@ enum DesignTokens {
     // MARK: Foreground colors
 
     static func fg(_ colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? Color(hex: 0xe6e4df) : Color(hex: 0x1f1d1a)
+        colorScheme == .dark ? Color(hex: 0xf2f0eb) : Color(hex: 0x1e1c19)
     }
     static func fgSoft(_ colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? Color(hex: 0xc2bfb8) : Color(hex: 0x4a4742)
+        colorScheme == .dark ? Color(hex: 0xd2cfc8) : Color(hex: 0x3e3b37)
     }
     static func fgMute(_ colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? Color(hex: 0x888680) : Color(hex: 0x8a8780)
+        colorScheme == .dark ? Color(hex: 0xa09d98) : Color(hex: 0x6a6865)
     }
     static func fgFaint(_ colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? Color(hex: 0x555350) : Color(hex: 0xb5b1a9)
+        colorScheme == .dark ? Color(hex: 0x6e6c68) : Color(hex: 0xa09d97)
     }
 
     // MARK: Line/border colors

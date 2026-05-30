@@ -62,7 +62,7 @@ private struct AppearanceTab: View {
 
                 LabeledContent("Line height") {
                     HStack {
-                        Slider(value: $settings.lineHeightMultiplier, in: 1.0...1.6, step: 0.05)
+                        Slider(value: $settings.lineHeightMultiplier, in: 1.0...2.0, step: 0.05)
                         Text(String(format: "%.2f×", settings.lineHeightMultiplier))
                             .monospacedDigit()
                             .frame(width: 50, alignment: .trailing)

@@ -18,11 +18,11 @@ struct StatusBarView: View {
             toggleSection
             divider
             Text("UTF-8 · LF")
-                .font(DesignTokens.font(11))
+                .font(DesignTokens.font(12))
                 .foregroundStyle(DesignTokens.fgMute(colorScheme))
                 .padding(.horizontal, 10)
         }
-        .frame(height: 28)
+        .frame(height: 30)
         .background(DesignTokens.bgElev(colorScheme))
         .overlay(alignment: .top) {
             Rectangle()
@@ -40,7 +40,7 @@ struct StatusBarView: View {
                 fileKindMenu(file: file)
             } else {
                 Text("Ready")
-                    .font(DesignTokens.font(11, weight: .medium))
+                    .font(DesignTokens.font(12, weight: .medium))
                     .foregroundStyle(DesignTokens.fgSoft(colorScheme))
             }
         }
@@ -94,7 +94,7 @@ struct StatusBarView: View {
             .disabled(!canAutoDetect)
         } label: {
             Text(modeLabel)
-                .font(DesignTokens.font(11, weight: .medium))
+                .font(DesignTokens.font(12, weight: .medium))
                 .foregroundStyle(DesignTokens.fgSoft(colorScheme))
         }
         .menuStyle(.borderlessButton)
@@ -136,7 +136,7 @@ struct StatusBarView: View {
 
     private func statText(_ s: String) -> some View {
         Text(s)
-            .font(DesignTokens.font(11))
+            .font(DesignTokens.font(12))
             .foregroundStyle(DesignTokens.fgMute(colorScheme))
             .padding(.horizontal, 8)
     }
@@ -159,7 +159,7 @@ struct StatusBarView: View {
                     .fill(isOn ? appState.accentColor : DesignTokens.fgFaint(colorScheme))
                     .frame(width: 5, height: 5)
                 Text(label)
-                    .font(DesignTokens.font(11))
+                    .font(DesignTokens.font(12))
                     .foregroundStyle(isOn ? DesignTokens.fg(colorScheme) : DesignTokens.fgMute(colorScheme))
             }
             .padding(.horizontal, 6)
