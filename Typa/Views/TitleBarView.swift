@@ -185,14 +185,6 @@ struct TitleBarView: View {
             .buttonStyle(.plain)
             .padding(.trailing, 10)
 
-            // Transparent overlay that captures middle-click (button 2) to close
-            // the tab. SwiftUI buttons only respond to left-click, so this doesn't
-            // interfere with normal tab selection.
-            TabMiddleClickView { [id = file.id] in
-                appState.closeTabConfirmingSave(id: id)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .allowsHitTesting(true)
         }
         .overlay(alignment: .bottom) {
             if isActive {
@@ -289,34 +281,6 @@ struct TitleBarView: View {
         }
         .buttonStyle(.plain)
         .help(help)
-    }
-
-    // MARK: Helpers
-
-    /// Transparent NSView layer that fires a callback on middle-click (button 2).
-    /// Placed as an overlay on each tab so SwiftUI's left-click handling is
-    /// unaffected — buttons respond to left-click only, so there's no conflict.
-    private struct TabMiddleClickView: NSViewRepresentable {
-        let onMiddleClick: () -> Void
-
-        func makeNSView(context: Context) -> MiddleClickNSView {
-            let v = MiddleClickNSView()
-            v.onMiddleClick = onMiddleClick
-            return v
-        }
-        func updateNSView(_ nsView: MiddleClickNSView, context: Context) {
-            nsView.onMiddleClick = onMiddleClick
-        }
-
-        final class MiddleClickNSView: NSView {
-            var onMiddleClick: (() -> Void)?
-            override func otherMouseDown(with event: NSEvent) {
-                if event.buttonNumber == 2 { onMiddleClick?() }
-                else { super.otherMouseDown(with: event) }
-            }
-            // Stay transparent so all drawing passes through to SwiftUI.
-            override var isOpaque: Bool { false }
-        }
     }
 
     private var smartPasteChip: some View {
