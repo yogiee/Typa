@@ -125,7 +125,7 @@ struct SidebarView: View {
 
     private func sectionHeader(_ text: String) -> some View {
         Text(text.uppercased())
-            .font(DesignTokens.font(9, weight: .semibold))
+            .font(DesignTokens.font(10, weight: .semibold))
             .foregroundStyle(DesignTokens.fgFaint(colorScheme))
             .padding(.horizontal, 12)
             .padding(.top, 12)
@@ -152,7 +152,7 @@ struct SidebarView: View {
             }
             .padding(.leading, CGFloat(12 + (item.level - 1) * 12))
             .padding(.trailing, 8)
-            .frame(height: 28)
+            .frame(height: 30)
             .background(appState.activeAnchor == item.anchor
                         ? appState.accentColor.opacity(0.08)
                         : Color.clear)
@@ -183,7 +183,7 @@ struct FileRowView: View {
                         .foregroundStyle(isActive ? DesignTokens.fg(colorScheme) : DesignTokens.fgSoft(colorScheme))
                         .lineLimit(1)
                     Text("\(file.folder) · \(file.modified)")
-                        .font(DesignTokens.font(10))
+                        .font(DesignTokens.font(11))
                         .foregroundStyle(DesignTokens.fgFaint(colorScheme))
                 }
                 Spacer()
@@ -202,7 +202,7 @@ struct FileRowView: View {
 
     private var kindChip: some View {
         Text(file.displayKind)
-            .font(DesignTokens.font(9, weight: .semibold))
+            .font(DesignTokens.font(10, weight: .semibold))
             .foregroundStyle(chipColor)
             .padding(.horizontal, 4)
             .padding(.vertical, 2)

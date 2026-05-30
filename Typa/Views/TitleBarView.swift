@@ -8,11 +8,11 @@ struct TitleBarView: View {
 
     // Fixed top-row height. Matches the natural traffic-light vertical
     // center on macOS 14+ (lights are at ~y=14, height 14, so the row
-    // needs to be ~32 for them to look centered). Using a constant
+    // needs to be ~33 for them to look centered). Using a constant
     // instead of measuring at runtime — the runtime path was sometimes
     // measuring the wrong window (e.g. settings) and collapsing the
     // top row.
-    private let rowHeight: CGFloat = 32
+    private let rowHeight: CGFloat = 33
 
     var body: some View {
         @Bindable var state = appState
@@ -38,7 +38,7 @@ struct TitleBarView: View {
                 appState.toggleSidebar()
             } label: {
                 Image(systemName: "sidebar.left")
-                    .font(.system(size: 13, weight: .regular))
+                    .font(.system(size: 14, weight: .regular))
                     .foregroundStyle(appState.sidebarOpen
                         ? appState.accentColor
                         : DesignTokens.fgMute(colorScheme))
@@ -95,6 +95,17 @@ struct TitleBarView: View {
         }
         .frame(height: rowHeight)
         .frame(maxWidth: .infinity)
+        .simultaneousGesture(
+            TapGesture(count: 2).onEnded {
+                guard let window = NSApp.keyWindow else { return }
+                let pref = UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick") ?? "Maximize"
+                switch pref {
+                case "Minimize": window.performMiniaturize(nil)
+                case "None":     break
+                default:         window.performZoom(nil)
+                }
+            }
+        )
     }
 
     // MARK: Tab row
@@ -115,15 +126,15 @@ struct TitleBarView: View {
                         appState.newFile()
                     } label: {
                         Text("+")
-                            .font(DesignTokens.font(16))
+                            .font(DesignTokens.font(17))
                             .foregroundStyle(DesignTokens.fgMute(colorScheme))
-                            .frame(width: 32, height: 34)
+                            .frame(width: 32, height: 36)
                     }
                     .buttonStyle(.plain)
                     .help("New File")
                 }
             }
-            .frame(height: 34)
+            .frame(height: 36)
 
             if appState.settings.smartPaste {
                 smartPasteChip
@@ -139,13 +150,13 @@ struct TitleBarView: View {
                 HStack(spacing: 6) {
                     kindChip(file.displayKind, kind: file.kind)
                     Text(file.name)
-                        .font(DesignTokens.font(12, weight: isActive ? .medium : .regular))
+                        .font(DesignTokens.font(13, weight: isActive ? .medium : .regular))
                         .foregroundStyle(isActive ? DesignTokens.fg(colorScheme) : DesignTokens.fgMute(colorScheme))
                         .lineLimit(1)
                     Color.clear.frame(width: 18)  // reserved for close button / dirty dot
                 }
                 .padding(.horizontal, 10)
-                .frame(height: 34)
+                .frame(height: 36)
                 .background(isActive ? DesignTokens.bgPane(colorScheme) : Color.clear)
                 .contentShape(Rectangle())
             }
@@ -173,6 +184,15 @@ struct TitleBarView: View {
             }
             .buttonStyle(.plain)
             .padding(.trailing, 10)
+
+            // Transparent overlay that captures middle-click (button 2) to close
+            // the tab. SwiftUI buttons only respond to left-click, so this doesn't
+            // interfere with normal tab selection.
+            TabMiddleClickView { [id = file.id] in
+                appState.closeTabConfirmingSave(id: id)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .allowsHitTesting(true)
         }
         .overlay(alignment: .bottom) {
             if isActive {
@@ -182,11 +202,18 @@ struct TitleBarView: View {
                     .allowsHitTesting(false)
             }
         }
+        .contextMenu {
+            Button("Close") { appState.closeTabConfirmingSave(id: file.id) }
+            Button("Save")  { appState.saveFile(id: file.id) }
+            Button("Save All") { appState.saveAllDirty() }
+            Divider()
+            Button("Close All Other Tabs") { appState.closeOtherTabs(id: file.id) }
+        }
     }
 
     private func kindChip(_ label: String, kind: FileKind) -> some View {
         Text(label)
-            .font(DesignTokens.font(9, weight: .semibold))
+            .font(DesignTokens.font(10, weight: .semibold))
             .foregroundStyle(chipColor(kind))
             .padding(.horizontal, 4)
             .padding(.vertical, 2)
@@ -223,7 +250,7 @@ struct TitleBarView: View {
     private func modeBtn(label: String, isActive: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(label)
-                .font(DesignTokens.font(11, weight: isActive ? .medium : .regular))
+                .font(DesignTokens.font(12, weight: isActive ? .medium : .regular))
                 .foregroundStyle(isActive ? appState.accentColor : DesignTokens.fgMute(colorScheme))
                 .padding(.horizontal, 8)
                 .frame(height: 24)
@@ -244,7 +271,7 @@ struct TitleBarView: View {
             appState.settings.theme = appState.settings.theme == .dark ? .light : .dark
         } label: {
             Image(systemName: appState.settings.theme == .dark ? "sun.max" : "moon")
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .foregroundStyle(DesignTokens.fgMute(colorScheme))
                 .frame(width: 28, height: 28)
         }
@@ -256,12 +283,40 @@ struct TitleBarView: View {
                             isActive: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .foregroundStyle(isActive ? appState.accentColor : DesignTokens.fgMute(colorScheme))
                 .frame(width: 28, height: 28)
         }
         .buttonStyle(.plain)
         .help(help)
+    }
+
+    // MARK: Helpers
+
+    /// Transparent NSView layer that fires a callback on middle-click (button 2).
+    /// Placed as an overlay on each tab so SwiftUI's left-click handling is
+    /// unaffected — buttons respond to left-click only, so there's no conflict.
+    private struct TabMiddleClickView: NSViewRepresentable {
+        let onMiddleClick: () -> Void
+
+        func makeNSView(context: Context) -> MiddleClickNSView {
+            let v = MiddleClickNSView()
+            v.onMiddleClick = onMiddleClick
+            return v
+        }
+        func updateNSView(_ nsView: MiddleClickNSView, context: Context) {
+            nsView.onMiddleClick = onMiddleClick
+        }
+
+        final class MiddleClickNSView: NSView {
+            var onMiddleClick: (() -> Void)?
+            override func otherMouseDown(with event: NSEvent) {
+                if event.buttonNumber == 2 { onMiddleClick?() }
+                else { super.otherMouseDown(with: event) }
+            }
+            // Stay transparent so all drawing passes through to SwiftUI.
+            override var isOpaque: Bool { false }
+        }
     }
 
     private var smartPasteChip: some View {

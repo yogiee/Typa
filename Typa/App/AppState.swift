@@ -288,6 +288,10 @@ final class AppState {
         if files[id]?.kind == .markdown && mdModes[id] == nil {
             mdModes[id] = settings.mdDefault
         }
+        // Body may have been cleared when the tab was last closed. Reload it.
+        if let file = files[id], let url = file.url, file.body.isEmpty, !file.isDirty {
+            loadBodyAsync(id: id, url: url)
+        }
     }
 
     func closeTab(id: String) {
@@ -296,13 +300,10 @@ final class AppState {
             activeTabId = openTabIds.last
         }
         guard var f = files[id] else { return }
-        if let url = f.url {
-            // Reload from disk so isDirty is cleared and the in-memory body
-            // matches the saved state (prevents ghost quit-prompts and stale
-            // content when the file is reopened from the sidebar).
-            if let fresh = try? String(contentsOf: url, encoding: .utf8) {
-                f.body = fresh
-            }
+        if f.url != nil {
+            // Free the large body string; keep metadata so the sidebar Recent
+            // list remains populated. Body is lazy-reloaded when the tab reopens.
+            f.body = ""
             f.isDirty = false
             files[id] = f
         } else {
@@ -353,20 +354,35 @@ final class AppState {
     func loadFile(url: URL) {
         let id = url.absoluteString
         if files[id] != nil { openFile(id: id); return }
-        guard let body = try? String(contentsOf: url, encoding: .utf8) else { return }
         let (kind, lang) = Self.detectKind(for: url)
+        // Create a placeholder immediately so the window/tab appears without
+        // blocking on the disk read. Body is filled asynchronously.
         files[id] = FileItem(id: id, name: url.lastPathComponent,
                               folder: url.deletingLastPathComponent().lastPathComponent,
-                              kind: kind, lang: lang, body: body,
+                              kind: kind, lang: lang, body: "",
                               modified: Self.relativeDateString(Date()),
                               url: url)
         openFile(id: id)
         recordRecent(url)
+        loadBodyAsync(id: id, url: url)
     }
 
-    /// Hydrate the sidebar's Recent list at launch by reading lightweight
-    /// metadata from disk for each remembered URL — without opening tabs.
-    /// Files that no longer exist or can't be read are dropped from recents.
+    private func loadBodyAsync(id: String, url: URL) {
+        Task.detached(priority: .userInitiated) { [weak self] in
+            guard let body = try? String(contentsOf: url, encoding: .utf8) else { return }
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                // Guard: if the user started editing before load finished, their
+                // content takes priority — don't overwrite the in-progress edit.
+                guard self.files[id]?.isDirty == false else { return }
+                self.files[id]?.body = body
+            }
+        }
+    }
+
+    /// Hydrate the sidebar's Recent list at launch from the saved URL list.
+    /// Only metadata is loaded — no disk reads for file bodies. Bodies are
+    /// loaded lazily when a tab is actually opened.
     func hydrateRecentFiles() {
         let surviving = recentURLs.filter { url in
             (try? url.checkResourceIsReachable()) == true
@@ -375,16 +391,11 @@ final class AppState {
         saveRecentURLs()
 
         for url in surviving where files[url.absoluteString] == nil {
-            // Lazy hydration: read body so the row's kind chip is correct.
-            // Skipped if the file is huge (>1 MB) to keep launch instant.
-            let attrs = try? FileManager.default.attributesOfItem(atPath: url.path)
-            if let size = attrs?[.size] as? Int, size > 1_000_000 { continue }
-            guard let body = try? String(contentsOf: url, encoding: .utf8) else { continue }
             let (kind, lang) = Self.detectKind(for: url)
             let id = url.absoluteString
             files[id] = FileItem(id: id, name: url.lastPathComponent,
                                   folder: url.deletingLastPathComponent().lastPathComponent,
-                                  kind: kind, lang: lang, body: body,
+                                  kind: kind, lang: lang, body: "",
                                   modified: Self.relativeDateString(Date()),
                                   url: url)
         }
@@ -509,6 +520,30 @@ final class AppState {
     }
 
     // MARK: Save
+
+    /// Save a specific file by ID. Used by the tab context menu.
+    func saveFile(id: String) {
+        guard let file = files[id] else { return }
+        if let url = file.url {
+            write(file: file, to: url)
+        } else {
+            let panel = NSSavePanel()
+            panel.nameFieldStringValue = file.name
+            panel.canCreateDirectories = true
+            panel.begin { [weak self] response in
+                guard response == .OK, let url = panel.url else { return }
+                Task { @MainActor in self?.write(file: file, to: url) }
+            }
+        }
+    }
+
+    /// Close every open tab except the given one. Prompts for unsaved changes.
+    func closeOtherTabs(id: String) {
+        let others = openTabIds.filter { $0 != id }
+        for otherId in others {
+            closeTabConfirmingSave(id: otherId)
+        }
+    }
 
     /// `⌘S`. Writes the active file to its URL. If the file has no URL
     /// (Untitled), opens a save panel.

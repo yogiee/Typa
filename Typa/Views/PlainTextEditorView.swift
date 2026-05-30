@@ -448,7 +448,14 @@ struct EditorNSTextView: NSViewRepresentable {
             if parent.text != tv.string { parent.text = tv.string }
             updateCaretLine(tv)
             restoreTypingAttributes(tv)
-            DispatchQueue.main.async { [weak self] in self?.emitLineSegments() }
+            // Combine line-segment emission with scroll-to-cursor in one async
+            // block so both land in the same render cycle. This ensures the new
+            // last line is visible after pressing Enter at the bottom of the file.
+            DispatchQueue.main.async { [weak self, weak tv] in
+                guard let self, let tv else { return }
+                self.emitLineSegments()
+                tv.scrollRangeToVisible(tv.selectedRange())
+            }
         }
 
         func textViewDidChangeSelection(_ notification: Notification) {

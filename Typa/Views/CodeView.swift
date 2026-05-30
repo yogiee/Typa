@@ -307,7 +307,11 @@ struct CodeEditorNSTextView: NSViewRepresentable {
             parent.applyHighlighting(tv)
             updateCaretLine(tv)
             restoreTypingAttributes(tv)
-            DispatchQueue.main.async { [weak self] in self?.emitLineSegments() }
+            DispatchQueue.main.async { [weak self, weak tv] in
+                guard let self, let tv else { return }
+                self.emitLineSegments()
+                tv.scrollRangeToVisible(tv.selectedRange())
+            }
         }
 
         func textViewDidChangeSelection(_ notification: Notification) {
