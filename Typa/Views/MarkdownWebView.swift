@@ -69,16 +69,24 @@ struct MarkdownWebView: NSViewRepresentable {
             context.coordinator.lastSource = source
             wv.loadHTMLString(fullPageHTML(), baseURL: nil)
         } else if source != context.coordinator.lastSource {
-            // Only the markdown source changed → swap body via JS. Avoids the
-            // navigation flash and preserves scroll position natively.
+            let wasEmpty = context.coordinator.lastSource.isEmpty
             context.coordinator.lastSource = source
-            let bodyHTML = MarkdownEngine.renderBodyHTML(source)
-            // Use JSONEncoder to safely escape arbitrary HTML for embedding
-            // as a JS string literal — no manual quote/backslash juggling.
-            if let data = try? JSONEncoder().encode([bodyHTML]),
-               let jsArray = String(data: data, encoding: .utf8) {
-                wv.evaluateJavaScript("window.tpReplaceBody(\(jsArray)[0]);",
-                                      completionHandler: nil)
+            if wasEmpty {
+                // Previous source was empty (async body load just finished).
+                // tpReplaceBody may not exist yet if WKWebView hasn't completed
+                // its initial navigation — do a full reload to be safe.
+                wv.loadHTMLString(fullPageHTML(), baseURL: nil)
+            } else {
+                // Only the markdown source changed → swap body via JS. Avoids the
+                // navigation flash and preserves scroll position natively.
+                let bodyHTML = MarkdownEngine.renderBodyHTML(source)
+                // Use JSONEncoder to safely escape arbitrary HTML for embedding
+                // as a JS string literal — no manual quote/backslash juggling.
+                if let data = try? JSONEncoder().encode([bodyHTML]),
+                   let jsArray = String(data: data, encoding: .utf8) {
+                    wv.evaluateJavaScript("window.tpReplaceBody(\(jsArray)[0]);",
+                                          completionHandler: nil)
+                }
             }
         } else if let f = scrollFraction {
             context.coordinator.applyScroll(fraction: f)
