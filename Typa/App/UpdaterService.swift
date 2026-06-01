@@ -1,26 +1,42 @@
 @preconcurrency import Sparkle
 import Foundation
 
-/// Sparkle wrapper. Mirrors the IPMSGX / WallP pattern.
+enum UpdateCheckSchedule: Int, CaseIterable {
+    case daily   = 86400
+    case weekly  = 604800
+    case manual  = 0
+
+    var displayName: String {
+        switch self {
+        case .daily:  "Every day"
+        case .weekly: "Every week"
+        case .manual: "Manual only"
+        }
+    }
+}
+
+/// Sparkle wrapper. Matches the WallP / IPMSGX pattern.
 ///
-/// Update modes (persisted in UserDefaults so the choice survives launches
-/// without bloating AppSettings):
-///   0 = auto-update — check + download + install automatically
-///   1 = download updates, ask before installing
-///   2 = disabled — no automatic checking
+/// Schedule options (persisted in UserDefaults):
+///   daily  — check + download + install every 24 h
+///   weekly — check + download + install every 7 days (default)
+///   manual — no automatic checking; user triggers via Settings
 @Observable
 @MainActor
 final class UpdaterService {
     @MainActor static let shared = UpdaterService()
 
     private let controller: SPUStandardUpdaterController
-    private let modeKey = "tp.updateMode"
+    private let scheduleKey = "tp.updateCheckSchedule"
 
-    var updateMode: Int {
-        get { UserDefaults.standard.integer(forKey: modeKey) }
+    var updateCheckSchedule: UpdateCheckSchedule {
+        get {
+            let raw = UserDefaults.standard.integer(forKey: scheduleKey)
+            return UpdateCheckSchedule(rawValue: raw) ?? .weekly
+        }
         set {
-            UserDefaults.standard.set(newValue, forKey: modeKey)
-            applyUpdateMode(newValue)
+            UserDefaults.standard.set(newValue.rawValue, forKey: scheduleKey)
+            applySchedule(newValue)
         }
     }
 
@@ -30,24 +46,22 @@ final class UpdaterService {
             updaterDelegate: nil,
             userDriverDelegate: nil
         )
-        applyUpdateMode(UserDefaults.standard.integer(forKey: modeKey))
+        let raw = UserDefaults.standard.integer(forKey: scheduleKey)
+        applySchedule(UpdateCheckSchedule(rawValue: raw) ?? .weekly)
     }
 
-    /// Triggered by the "Check for updates" button in Settings → About.
     func checkForUpdates() {
         controller.checkForUpdates(nil)
     }
 
-    private func applyUpdateMode(_ mode: Int) {
+    private func applySchedule(_ schedule: UpdateCheckSchedule) {
         let updater = controller.updater
-        switch mode {
-        case 0:  // auto-update
+        switch schedule {
+        case .daily, .weekly:
             updater.automaticallyChecksForUpdates = true
             updater.automaticallyDownloadsUpdates = true
-        case 1:  // download, ask to install
-            updater.automaticallyChecksForUpdates = true
-            updater.automaticallyDownloadsUpdates = false
-        default: // disabled
+            updater.updateCheckInterval = TimeInterval(schedule.rawValue)
+        case .manual:
             updater.automaticallyChecksForUpdates = false
             updater.automaticallyDownloadsUpdates = false
         }
