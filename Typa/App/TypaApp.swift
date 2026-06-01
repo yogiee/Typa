@@ -26,8 +26,12 @@ struct TypaApp: App {
                     } else {
                         // Normal launch: populate recents list, then open a blank
                         // document so the user lands directly in the editor.
+                        // Guard: SwiftUI Window scenes can fire onAppear more than
+                        // once. Only create the Untitled tab when no tabs exist yet.
                         appState.hydrateRecentFiles()
-                        appState.newFile()
+                        if appState.openTabIds.isEmpty {
+                            appState.newFile()
+                        }
                     }
                 }
         }

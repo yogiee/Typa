@@ -448,14 +448,7 @@ struct EditorNSTextView: NSViewRepresentable {
             if parent.text != tv.string { parent.text = tv.string }
             updateCaretLine(tv)
             restoreTypingAttributes(tv)
-            // Combine line-segment emission with scroll-to-cursor in one async
-            // block so both land in the same render cycle. This ensures the new
-            // last line is visible after pressing Enter at the bottom of the file.
-            DispatchQueue.main.async { [weak self, weak tv] in
-                guard let self, let tv else { return }
-                self.emitLineSegments()
-                tv.scrollRangeToVisible(tv.selectedRange())
-            }
+            DispatchQueue.main.async { [weak self] in self?.emitLineSegments() }
         }
 
         func textViewDidChangeSelection(_ notification: Notification) {
@@ -791,6 +784,17 @@ struct EditorNSTextView: NSViewRepresentable {
             let lineLen = (lines[line] as NSString).length
             let lineCharRange = NSRange(location: startPos, length: lineLen)
 
+            // Cursor is on the phantom empty line that follows a trailing newline.
+            // No glyph exists for it — lm.glyphIndexForCharacter would return the
+            // preceding \n glyph (same line as the previous row), making activeLineDocY
+            // point one row too high and corrupting the drift calculation. Use the
+            // direct formula instead so drift = 0 for this case.
+            let src = tv.string as NSString
+            if startPos >= src.length {
+                return CGRect(x: 0, y: top + CGFloat(line) * lh,
+                              width: tv.bounds.width, height: lh)
+            }
+
             // Try the layout manager for an accurate union rect across wrapped fragments
             if let lm = tv.layoutManager, lm.numberOfGlyphs > 0 {
                 let glyphRange = lm.glyphRange(forCharacterRange: lineCharRange,
@@ -802,7 +806,7 @@ struct EditorNSTextView: NSViewRepresentable {
                 if glyphRange.length == 0 {
                     // Empty logical line — query the line fragment directly
                     let glyphIdx = lm.glyphIndexForCharacter(at: min(startPos,
-                                                                      max(0, (tv.string as NSString).length - 1)))
+                                                                      max(0, src.length - 1)))
                     if glyphIdx != NSNotFound {
                         totalRect = lm.lineFragmentRect(forGlyphAt: glyphIdx, effectiveRange: nil)
                     }
