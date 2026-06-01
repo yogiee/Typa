@@ -180,6 +180,10 @@ private struct MarkdownTab: View {
 
 private struct AboutTab: View {
     @State private var updater = UpdaterService.shared
+    @State private var schedule: UpdateCheckSchedule = {
+        let raw = UserDefaults.standard.integer(forKey: "tp.updateCheckSchedule")
+        return UpdateCheckSchedule(rawValue: raw) ?? .weekly
+    }()
 
     private var appName: String {
         Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "Typa"
@@ -220,22 +224,28 @@ private struct AboutTab: View {
 
             // Updates
             VStack(spacing: 8) {
-                Button("Check for Updates…") {
-                    updater.checkForUpdates()
+                GroupBox {
+                    LabeledContent("Check for Updates") {
+                        Picker("", selection: $schedule) {
+                            ForEach(UpdateCheckSchedule.allCases, id: \.self) { s in
+                                Text(s.displayName).tag(s)
+                            }
+                        }
+                        .pickerStyle(.radioGroup)
+                        .labelsHidden()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .onChange(of: schedule) { _, newValue in
+                            updater.updateCheckSchedule = newValue
+                        }
+                    }
                 }
-                .controlSize(.regular)
 
-                Picker("", selection: Binding(
-                    get: { updater.updateMode },
-                    set: { updater.updateMode = $0 }
-                )) {
-                    Text("Install updates automatically").tag(0)
-                    Text("Download and ask before installing").tag(1)
-                    Text("Don't check for updates").tag(2)
+                GroupBox {
+                    Button("Check for Updates…") {
+                        updater.checkForUpdates()
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .pickerStyle(.menu)
-                .labelsHidden()
-                .frame(width: 280)
             }
             .padding(.top, 4)
 
