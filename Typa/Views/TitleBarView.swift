@@ -12,7 +12,7 @@ struct TitleBarView: View {
     // instead of measuring at runtime — the runtime path was sometimes
     // measuring the wrong window (e.g. settings) and collapsing the
     // top row.
-    private let rowHeight: CGFloat = 33
+    private let rowHeight: CGFloat = 36
 
     var body: some View {
         @Bindable var state = appState
@@ -38,13 +38,13 @@ struct TitleBarView: View {
                 appState.toggleSidebar()
             } label: {
                 Image(systemName: "sidebar.left")
-                    .font(.system(size: 14, weight: .regular))
+                    .font(.system(size: 16, weight: .regular))
                     .foregroundStyle(appState.sidebarOpen
                         ? appState.accentColor
                         : DesignTokens.fgMute(colorScheme))
             }
             .buttonStyle(.plain)
-            .frame(width: 28, height: rowHeight)
+            .frame(width: 30, height: rowHeight)
             .help("Toggle Sidebar ⌘1")
 
             Spacer()
@@ -95,6 +95,7 @@ struct TitleBarView: View {
         }
         .frame(height: rowHeight)
         .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
         .simultaneousGesture(
             TapGesture(count: 2).onEnded {
                 guard let window = NSApp.keyWindow else { return }
@@ -263,9 +264,9 @@ struct TitleBarView: View {
             appState.settings.theme = appState.settings.theme == .dark ? .light : .dark
         } label: {
             Image(systemName: appState.settings.theme == .dark ? "sun.max" : "moon")
-                .font(.system(size: 14))
+                .font(.system(size: 16))
                 .foregroundStyle(DesignTokens.fgMute(colorScheme))
-                .frame(width: 28, height: 28)
+                .frame(width: 30, height: 30)
         }
         .buttonStyle(.plain)
         .help("Toggle Theme")
@@ -275,9 +276,9 @@ struct TitleBarView: View {
                             isActive: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.system(size: 14))
+                .font(.system(size: 16))
                 .foregroundStyle(isActive ? appState.accentColor : DesignTokens.fgMute(colorScheme))
-                .frame(width: 28, height: 28)
+                .frame(width: 30, height: 30)
         }
         .buttonStyle(.plain)
         .help(help)
@@ -292,7 +293,7 @@ struct TitleBarView: View {
                     .fill(appState.accentColor)
                     .frame(width: 5, height: 5)
                 Text("smart paste")
-                    .font(DesignTokens.font(10))
+                    .font(DesignTokens.font(12))
                     .foregroundStyle(DesignTokens.fgSoft(colorScheme))
             }
             .padding(.horizontal, 8)
