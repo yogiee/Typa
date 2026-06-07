@@ -10,7 +10,7 @@ struct SidebarView: View {
             Divider().opacity(0.6)
             sidebarBody
         }
-        .frame(width: 240)
+        .frame(width: 276)
         .background(DesignTokens.bgSide(colorScheme))
         .overlay(alignment: .trailing) {
             Rectangle()
@@ -27,12 +27,13 @@ struct SidebarView: View {
                 appState.sidebarMode = .files
             } label: {
                 Text("Files")
-                    .font(DesignTokens.font(12, weight: appState.sidebarMode == .files ? .semibold : .regular))
+                    .font(DesignTokens.font(14, weight: appState.sidebarMode == .files ? .semibold : .regular))
                     .foregroundStyle(appState.sidebarMode == .files
                         ? DesignTokens.fg(colorScheme)
                         : DesignTokens.fgMute(colorScheme))
                     .frame(maxWidth: .infinity)
-                    .frame(height: 36)
+                    .frame(height: 38)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
@@ -40,14 +41,15 @@ struct SidebarView: View {
                 if appState.isMd { appState.sidebarMode = .outline }
             } label: {
                 Text("Outline")
-                    .font(DesignTokens.font(12, weight: appState.sidebarMode == .outline ? .semibold : .regular))
+                    .font(DesignTokens.font(14, weight: appState.sidebarMode == .outline ? .semibold : .regular))
                     .foregroundStyle(
                         !appState.isMd ? DesignTokens.fgFaint(colorScheme) :
                         appState.sidebarMode == .outline ? DesignTokens.fg(colorScheme) :
                         DesignTokens.fgMute(colorScheme)
                     )
                     .frame(maxWidth: .infinity)
-                    .frame(height: 36)
+                    .frame(height: 38)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .disabled(!appState.isMd)
@@ -56,9 +58,10 @@ struct SidebarView: View {
                 appState.sidebarOpen = false
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 10))
+                    .font(.system(size: 11))
                     .foregroundStyle(DesignTokens.fgMute(colorScheme))
-                    .frame(width: 28, height: 36)
+                    .frame(width: 30, height: 38)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
@@ -70,7 +73,7 @@ struct SidebarView: View {
                 Rectangle()
                     .fill(appState.sidebarMode == .outline ? appState.accentColor : Color.clear)
                     .frame(height: 2)
-                Color.clear.frame(width: 28, height: 2)
+                Color.clear.frame(width: 30, height: 2)
             }
         }
     }
@@ -109,7 +112,7 @@ struct SidebarView: View {
             LazyVStack(alignment: .leading, spacing: 0) {
                 if appState.outline.isEmpty {
                     Text("No headings yet")
-                        .font(DesignTokens.font(12))
+                        .font(DesignTokens.font(14))
                         .foregroundStyle(DesignTokens.fgFaint(colorScheme))
                         .padding(16)
                 } else {
@@ -125,7 +128,7 @@ struct SidebarView: View {
 
     private func sectionHeader(_ text: String) -> some View {
         Text(text.uppercased())
-            .font(DesignTokens.font(10, weight: .semibold))
+            .font(DesignTokens.font(12, weight: .semibold))
             .foregroundStyle(DesignTokens.fgFaint(colorScheme))
             .padding(.horizontal, 12)
             .padding(.top, 12)
@@ -143,7 +146,7 @@ struct SidebarView: View {
                           : DesignTokens.fgFaint(colorScheme))
                     .frame(width: 4, height: 4)
                 Text(item.text)
-                    .font(DesignTokens.font(12, weight: item.level == 1 ? .medium : .regular))
+                    .font(DesignTokens.font(14, weight: item.level == 1 ? .medium : .regular))
                     .foregroundStyle(appState.activeAnchor == item.anchor
                                      ? appState.accentColor
                                      : DesignTokens.fgSoft(colorScheme))
@@ -152,7 +155,7 @@ struct SidebarView: View {
             }
             .padding(.leading, CGFloat(12 + (item.level - 1) * 12))
             .padding(.trailing, 8)
-            .frame(height: 30)
+            .frame(height: 34)
             .background(appState.activeAnchor == item.anchor
                         ? appState.accentColor.opacity(0.08)
                         : Color.clear)
@@ -179,11 +182,11 @@ struct FileRowView: View {
                 kindChip
                 VStack(alignment: .leading, spacing: 1) {
                     Text(file.name)
-                        .font(DesignTokens.font(12, weight: isActive ? .medium : .regular))
+                        .font(DesignTokens.font(14, weight: isActive ? .medium : .regular))
                         .foregroundStyle(isActive ? DesignTokens.fg(colorScheme) : DesignTokens.fgSoft(colorScheme))
                         .lineLimit(1)
                     Text("\(file.folder) · \(file.modified)")
-                        .font(DesignTokens.font(11))
+                        .font(DesignTokens.font(12))
                         .foregroundStyle(DesignTokens.fgFaint(colorScheme))
                 }
                 Spacer()
@@ -194,7 +197,7 @@ struct FileRowView: View {
                 }
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            .padding(.vertical, 8)
             .background(isActive ? appState.accentColor.opacity(0.08) : Color.clear)
         }
         .buttonStyle(.plain)
@@ -202,7 +205,7 @@ struct FileRowView: View {
 
     private var kindChip: some View {
         Text(file.displayKind)
-            .font(DesignTokens.font(10, weight: .semibold))
+            .font(DesignTokens.font(12, weight: .semibold))
             .foregroundStyle(chipColor)
             .padding(.horizontal, 4)
             .padding(.vertical, 2)

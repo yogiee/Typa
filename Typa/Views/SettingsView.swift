@@ -198,22 +198,19 @@ private struct AboutTab: View {
     var body: some View {
         VStack(spacing: 14) {
             Spacer().frame(height: 4)
-
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
-                .frame(width: 88, height: 88)
+                .frame(width: 128, height: 128)
 
             VStack(spacing: 4) {
                 Text(appName)
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: 24, weight: .semibold))
                 Text("Version \(appVersion) (\(buildNumber))")
-                    .font(.callout)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
 
             Text("A small, focused text editor for macOS that reads Markdown beautifully.")
-                .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 36)
@@ -222,37 +219,34 @@ private struct AboutTab: View {
                 Label("View on GitHub", systemImage: "arrow.up.right.square")
             }
 
-            // Updates
-            VStack(spacing: 8) {
-                GroupBox {
-                    LabeledContent("Check for Updates") {
+            // Updates — identical Form structure to the other tabs
+            Form {
+                Section {
+                    LabeledContent("Check for updates") {
                         Picker("", selection: $schedule) {
                             ForEach(UpdateCheckSchedule.allCases, id: \.self) { s in
                                 Text(s.displayName).tag(s)
                             }
                         }
-                        .pickerStyle(.radioGroup)
-                        .labelsHidden()
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .pickerStyle(.segmented)
                         .onChange(of: schedule) { _, newValue in
                             updater.updateCheckSchedule = newValue
                         }
                     }
-                }
-
-                GroupBox {
                     Button("Check for Updates…") {
                         updater.checkForUpdates()
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
+            .formStyle(.grouped)
+            .scrollDisabled(true)
+            .scrollContentBackground(.hidden)
+            .fixedSize(horizontal: false, vertical: true)
             .padding(.top, 4)
 
             Spacer()
 
             Text("© 2026 · Built with Swift and SwiftUI")
-                .font(.caption)
                 .foregroundStyle(.tertiary)
                 .padding(.bottom, 12)
         }

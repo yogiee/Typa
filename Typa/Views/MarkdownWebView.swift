@@ -18,6 +18,10 @@ struct MarkdownWebView: NSViewRepresentable {
     let accentColor: Color
     let colorScheme: ColorScheme
 
+    /// Scroll fraction to restore when the WKWebView first finishes loading.
+    /// Passed once at creation time (read mode tab-switch restoration).
+    var initialScrollFraction: CGFloat = 0
+
     /// Optional scroll fraction (0..1). If supplied, the preview is driven
     /// from this value (used for split-view source → preview sync).
     var scrollFraction: CGFloat? = nil
@@ -35,7 +39,11 @@ struct MarkdownWebView: NSViewRepresentable {
     var findMatchIndex:    Int     = -1
     var findScrollTrigger: Int     = -1
 
-    func makeCoordinator() -> Coordinator { Coordinator(self) }
+    func makeCoordinator() -> Coordinator {
+        let c = Coordinator(self)
+        c.lastPreviewFraction = initialScrollFraction
+        return c
+    }
 
     func makeNSView(context: Context) -> WKWebView {
         let cfg = WKWebViewConfiguration()

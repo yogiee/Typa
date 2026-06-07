@@ -17,6 +17,8 @@ struct FileItem: Identifiable {
     /// True when in-memory body diverges from what's on disk (or for an
     /// untitled file, true once anything has been typed).
     var isDirty: Bool = false
+    /// Fraction (0–1) of the preview scroll position, persisted across tab switches.
+    var previewScrollFraction: CGFloat = 0
 
     var displayKind: String {
         switch kind {
@@ -520,6 +522,11 @@ final class AppState {
     }
 
     // MARK: Save
+
+    /// Persist the preview scroll fraction for a file so it survives tab switches.
+    func setPreviewScroll(_ id: String, _ fraction: CGFloat) {
+        files[id]?.previewScrollFraction = fraction
+    }
 
     /// Save a specific file by ID. Used by the tab context menu.
     func saveFile(id: String) {
