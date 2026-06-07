@@ -21,6 +21,22 @@
         <language>en</language>
 
         <item>
+            <title>Version 0.6.5</title>
+            <sparkle:releaseNotesLink>
+                https://github.com/yogiee/Typa/releases/tag/v0.6.5
+            </sparkle:releaseNotesLink>
+            <pubDate>Sat, 07 Jun 2026 00:00:00 +0000</pubDate>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure
+                url="https://github.com/yogiee/Typa/releases/download/v0.6.5/Typa-0.6.5.dmg"
+                sparkle:version="18"
+                sparkle:shortVersionString="0.6.5"
+                sparkle:edSignature="7B+x1ilWM+wVZ8/zLDNCga3cZP/qpLVu5RPe85uyAfV972sdRod2slOWWnympCoYrhedufFAWBJWxrO9MA7YBg=="
+                length="2762756"
+                type="application/octet-stream" />
+        </item>
+
+        <item>
             <title>Version 0.6.3</title>
             <sparkle:releaseNotesLink>
                 https://github.com/yogiee/Typa/releases/tag/v0.6.3
