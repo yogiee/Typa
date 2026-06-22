@@ -19,6 +19,9 @@ struct FileItem: Identifiable {
     var isDirty: Bool = false
     /// Fraction (0–1) of the preview scroll position, persisted across tab switches.
     var previewScrollFraction: CGFloat = 0
+    /// Per-tab, in-memory markdown reading-width override. nil = use the global
+    /// setting. Temporary: lives only while the tab is open (not persisted).
+    var readingWidthOverride: ReadingWidth? = nil
 
     var displayKind: String {
         switch kind {
@@ -52,12 +55,45 @@ enum MdMode: String, Codable { case read, split }
 enum SplitOrientation: String, Codable { case vertical, horizontal }
 enum SidebarMode { case files, outline }
 
+// Markdown reading-measure presets. `lengthCh` is the target line measure in
+// characters; `.full` returns nil — no cap, content fills the window width.
+enum ReadingWidth: String, Codable, CaseIterable {
+    case normal, relaxed, wide, full
+
+    var label: String {
+        switch self {
+        case .normal:  return "Normal"
+        case .relaxed: return "Relaxed"
+        case .wide:    return "Wide"
+        case .full:    return "Full"
+        }
+    }
+
+    var lengthCh: Int? {
+        switch self {
+        case .normal:  return 72
+        case .relaxed: return 92
+        case .wide:    return 112
+        case .full:    return nil
+        }
+    }
+
+    // Map a legacy `lineLength` (ch) value onto the nearest preset.
+    static func fromLegacyLineLength(_ ch: Double) -> ReadingWidth {
+        switch ch {
+        case ..<82:   return .normal
+        case ..<102:  return .relaxed
+        default:      return .wide
+        }
+    }
+}
+
 struct AppSettings {
     var theme: AppTheme = .light
     var fontName: String = "JetBrains Mono"
     var fontSize: Double = 14
     var lineHeightMultiplier: Double = 1.0   // multiplies natural line height
-    var lineLength: Double = 72
+    var readingWidth: ReadingWidth = .normal // markdown reading measure
     var splitOrientation: SplitOrientation = .vertical
     var focusMode: Bool = false
     var showLineNumbers: Bool = true
@@ -76,7 +112,7 @@ extension AppSettings: RawRepresentable {
             "fontName":             fontName,
             "fontSize":             fontSize,
             "lineHeightMultiplier": lineHeightMultiplier,
-            "lineLength":           lineLength,
+            "readingWidth":         readingWidth.rawValue,
             "splitOrientation":     splitOrientation.rawValue,
             "focusMode":            focusMode,
             "showLineNumbers":      showLineNumbers,
@@ -100,7 +136,14 @@ extension AppSettings: RawRepresentable {
         fontName             = d["fontName"] as? String                                 ?? def.fontName
         fontSize             = d["fontSize"] as? Double                                 ?? def.fontSize
         lineHeightMultiplier = d["lineHeightMultiplier"] as? Double                     ?? def.lineHeightMultiplier
-        lineLength           = d["lineLength"] as? Double                               ?? def.lineLength
+        // Prefer the new key; migrate from the legacy `lineLength` (ch) value if absent.
+        if let rw = (d["readingWidth"] as? String).flatMap(ReadingWidth.init) {
+            readingWidth = rw
+        } else if let legacy = d["lineLength"] as? Double {
+            readingWidth = ReadingWidth.fromLegacyLineLength(legacy)
+        } else {
+            readingWidth = def.readingWidth
+        }
         splitOrientation     = (d["splitOrientation"] as? String).flatMap(SplitOrientation.init) ?? def.splitOrientation
         focusMode            = d["focusMode"] as? Bool                                  ?? def.focusMode
         showLineNumbers      = d["showLineNumbers"] as? Bool                            ?? def.showLineNumbers
@@ -528,6 +571,22 @@ final class AppState {
         files[id]?.previewScrollFraction = fraction
     }
 
+    /// Markdown reading width in effect for a file: its per-tab override if set,
+    /// otherwise the global setting.
+    func effectiveReadingWidth(for file: FileItem) -> ReadingWidth {
+        file.readingWidthOverride ?? settings.readingWidth
+    }
+
+    /// Reading width in effect for the active file (for the status-bar control).
+    var activeReadingWidth: ReadingWidth {
+        activeFile.map(effectiveReadingWidth) ?? settings.readingWidth
+    }
+
+    /// Set (or clear, with nil) the per-tab reading-width override for a file.
+    func setReadingWidthOverride(_ width: ReadingWidth?, for id: String) {
+        files[id]?.readingWidthOverride = width
+    }
+
     /// Save a specific file by ID. Used by the tab context menu.
     func saveFile(id: String) {
         guard let file = files[id] else { return }
@@ -726,7 +785,7 @@ final class AppState {
         let html = MarkdownEngine.renderExportHTML(
             file.body,
             fontSize:    CGFloat(settings.fontSize),
-            lineLength:  Int(settings.lineLength),
+            lineLength:  settings.readingWidth.lengthCh,
             accentHex:   accentColor.hexString
         )
         try? html.write(to: url, atomically: true, encoding: .utf8)
@@ -737,7 +796,7 @@ final class AppState {
         let html = MarkdownEngine.renderExportHTML(
             file.body,
             fontSize:    CGFloat(settings.fontSize),
-            lineLength:  Int(settings.lineLength),
+            lineLength:  settings.readingWidth.lengthCh,
             accentHex:   accentColor.hexString
         )
         // Offscreen WKWebView — sized to a US-Letter page at 96 dpi

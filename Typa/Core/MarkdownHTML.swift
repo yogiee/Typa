@@ -9,7 +9,7 @@ extension MarkdownEngine {
         _ source: String,
         colorScheme: ColorScheme,
         fontSize: CGFloat,
-        lineLength: Int,
+        lineLength: Int?,
         accentHex: String,
         themeName: String = "default"
     ) -> String {
@@ -107,7 +107,7 @@ extension MarkdownEngine {
     static func renderExportHTML(
         _ source: String,
         fontSize: CGFloat,
-        lineLength: Int,
+        lineLength: Int?,
         accentHex: String
     ) -> String {
         let bodyHTML = renderBodyHTML(source)
@@ -303,7 +303,7 @@ extension MarkdownEngine {
     private static func stylesheet(
         colorScheme: ColorScheme,
         fontSize: CGFloat,
-        lineLength: Int,
+        lineLength: Int?,
         accentHex: String,
         themeName: String
     ) -> String {
@@ -334,7 +334,10 @@ extension MarkdownEngine {
         let sc = SyntaxColors.forScheme(colorScheme)
         let tk = sc.hexMap()
 
-        let maxW = max(CGFloat(lineLength) * fontSize * 0.55, 320)
+        // nil lineLength = "Full" reading width → no cap, fill the window.
+        let bodyMaxWidth: String = lineLength.map {
+            "\(Int(max(CGFloat($0) * fontSize * 0.55, 320)))px"
+        } ?? "none"
 
         return """
         :root {
@@ -361,7 +364,7 @@ extension MarkdownEngine {
             -webkit-font-smoothing: antialiased;
         }
         .markdown-body {
-            max-width: \(Int(maxW))px;
+            max-width: \(bodyMaxWidth);
             margin: 48px auto;
             padding: 0 32px 64px;
         }
@@ -431,8 +434,14 @@ extension MarkdownEngine {
             border-top: 0.5px solid var(--line);
             margin: 2em 0;
         }
+        /* Tables escape the prose measure: size to content, cap at the
+           container, and scroll horizontally when wider — so wide tables don't
+           cramp the readable column. (Same approach GitHub/Obsidian use.) */
         table {
-            width: 100%;
+            display: block;
+            width: max-content;
+            max-width: 100%;
+            overflow-x: auto;
             border-collapse: collapse;
             margin: 0 0 1.2em;
         }
@@ -440,6 +449,8 @@ extension MarkdownEngine {
             border: 0.5px solid var(--line);
             padding: 8px 12px;
             text-align: left;
+            white-space: nowrap;   /* keep cells single-line so the table
+                                      scrolls horizontally instead of cramping */
         }
         th { background: var(--code-bg); font-weight: 600; }
         mark {

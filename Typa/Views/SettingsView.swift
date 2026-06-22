@@ -69,16 +69,6 @@ private struct AppearanceTab: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-
-                LabeledContent("Line length") {
-                    HStack {
-                        Slider(value: $settings.lineLength, in: 50...100, step: 2)
-                        Text("\(Int(settings.lineLength)) ch")
-                            .monospacedDigit()
-                            .frame(width: 50, alignment: .trailing)
-                            .foregroundStyle(.secondary)
-                    }
-                }
             }
 
             Section("Accent color") {
@@ -157,6 +147,14 @@ private struct MarkdownTab: View {
                     Text("Split mode").tag(MdMode.split)
                 }
                 .pickerStyle(.segmented)
+
+                Picker("Reading width", selection: $settings.readingWidth) {
+                    ForEach(ReadingWidth.allCases, id: \.self) { w in
+                        Text(w.label).tag(w)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .help("Default measure for rendered Markdown. Override per file from the status bar.")
             }
 
             Section("Split view") {

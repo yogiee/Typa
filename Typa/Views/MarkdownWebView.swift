@@ -14,7 +14,7 @@ struct MarkdownWebView: NSViewRepresentable {
 
     let source:      String
     let fontSize:    CGFloat
-    let lineLength:  Int
+    let lineLength:  Int?      // nil = full reading width (no cap)
     let accentColor: Color
     let colorScheme: ColorScheme
 
@@ -142,7 +142,7 @@ struct MarkdownWebView: NSViewRepresentable {
     /// Hash of the CSS-affecting inputs. When this changes, we must reload
     /// the page; when only `source` differs, we can swap body HTML in place.
     private var cssKey: String {
-        "\(colorScheme)|\(fontSize)|\(lineLength)|\(accentColor.hexString)"
+        "\(colorScheme)|\(fontSize)|\(lineLength.map(String.init) ?? "full")|\(accentColor.hexString)"
     }
 
     // MARK: - Coordinator

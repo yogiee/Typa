@@ -175,7 +175,7 @@ struct MarkdownSplitView: View {
             MarkdownWebView(
                 source:            file.body,
                 fontSize:          fontSize,
-                lineLength:        Int(appState.settings.lineLength),
+                lineLength:        appState.effectiveReadingWidth(for: file).lengthCh,
                 accentColor:       appState.accentColor,
                 colorScheme:       colorScheme,
                 scrollFraction:    appState.settings.syncScroll ? scrollFraction : nil,

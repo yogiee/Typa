@@ -12,7 +12,7 @@ struct MarkdownReadView: View {
         MarkdownWebView(
             source:                file.body,
             fontSize:              fontSize,
-            lineLength:            Int(appState.settings.lineLength),
+            lineLength:            appState.effectiveReadingWidth(for: file).lengthCh,
             accentColor:           appState.accentColor,
             colorScheme:           colorScheme,
             initialScrollFraction: file.previewScrollFraction,
