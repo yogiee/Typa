@@ -7,7 +7,7 @@ struct MarkdownSplitView: View {
 
     let file: FileItem
     @State private var activeLine:     Int     = 0
-    @State private var lineSegments:   [Int]   = [1]
+    @State private var lineCenters:    [CGFloat] = []
     @State private var scrollOffset:   CGFloat = 0   // raw y for gutter
     @State private var scrollFraction: CGFloat = 0   // 0..1 for preview sync
 
@@ -57,11 +57,10 @@ struct MarkdownSplitView: View {
             HStack(spacing: 0) {
                 if appState.settings.showLineNumbers {
                     GutterView(
-                        lineSegments: lineSegments,
+                        lineCenters:  lineCenters,
                         activeLine:   activeLine,
                         scrollOffset: scrollOffset,
                         lineHeight:   lineHeight,
-                        topInset:     16,
                         fontSize:     fontSize,
                         accentColor:  appState.accentColor,
                         colorScheme:  colorScheme
@@ -93,8 +92,8 @@ struct MarkdownSplitView: View {
                     onScrollFraction: { f in
                         if appState.settings.syncScroll { scrollFraction = f }
                     },
-                    onLineSegments: { segs in
-                        lineSegments = segs
+                    onLineCenters: { centers in
+                        lineCenters = centers
                     }
                 )
             }

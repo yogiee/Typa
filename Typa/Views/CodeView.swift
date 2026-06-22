@@ -7,10 +7,11 @@ struct CodeView: View {
 
     let file: FileItem
 
-    @State private var activeLine:     Int     = 0
-    @State private var lineSegments:  [Int]   = [1]
-    @State private var scrollOffset:  CGFloat = 0
-    @State private var activeLineDocY: CGFloat = -1
+    @State private var activeLine:    Int       = 0
+    // Document-space center Y of each logical line's first visual fragment
+    // (see GutterView / computeLineCenters). Drives the gutter numbers.
+    @State private var lineCenters:   [CGFloat] = []
+    @State private var scrollOffset:  CGFloat   = 0
 
     private var fontSize:   CGFloat { CGFloat(appState.settings.fontSize) }
     private var fontName:   String  { appState.settings.fontName }
@@ -26,15 +27,13 @@ struct CodeView: View {
         HStack(spacing: 0) {
             if appState.settings.showLineNumbers {
                 GutterView(
-                    lineSegments:   lineSegments,
-                    activeLine:     activeLine,
-                    scrollOffset:   scrollOffset,
-                    activeLineDocY: activeLineDocY,
-                    lineHeight:     lineHeight,
-                    topInset:       16,
-                    fontSize:       fontSize,
-                    accentColor:    appState.accentColor,
-                    colorScheme:    colorScheme
+                    lineCenters:  lineCenters,
+                    activeLine:   activeLine,
+                    scrollOffset: scrollOffset,
+                    lineHeight:   lineHeight,
+                    fontSize:     fontSize,
+                    accentColor:  appState.accentColor,
+                    colorScheme:  colorScheme
                 )
             }
             CodeEditorNSTextView(
@@ -57,11 +56,8 @@ struct CodeView: View {
                 onScrollChange: { offset in
                     scrollOffset = offset
                 },
-                onLineSegments: { segs in
-                    lineSegments = segs
-                },
-                onActiveLineDocY: { y in
-                    activeLineDocY = y
+                onLineCenters: { centers in
+                    lineCenters = centers
                 }
             )
         }
@@ -104,8 +100,8 @@ struct CodeEditorNSTextView: NSViewRepresentable {
 
     var onCaretLineChange: ((Int, Int) -> Void)? = nil
     var onScrollChange:    ((CGFloat) -> Void)?  = nil
-    var onLineSegments:    (([Int]) -> Void)?    = nil
-    var onActiveLineDocY:  ((CGFloat) -> Void)?  = nil
+    // Document-space center Y of each logical line's first visual fragment.
+    var onLineCenters:     (([CGFloat]) -> Void)? = nil
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -116,7 +112,7 @@ struct CodeEditorNSTextView: NSViewRepresentable {
         scrollView.autohidesScrollers    = true
         scrollView.drawsBackground       = false
 
-        let tv = NSTextView()
+        let tv = ActiveLineTextView()
         tv.delegate        = context.coordinator
         tv.isEditable      = true
         tv.isSelectable    = true
@@ -152,7 +148,7 @@ struct CodeEditorNSTextView: NSViewRepresentable {
         )
 
         DispatchQueue.main.async {
-            context.coordinator.emitLineSegments()
+            context.coordinator.emitLineCenters()
         }
 
         return scrollView
@@ -170,7 +166,7 @@ struct CodeEditorNSTextView: NSViewRepresentable {
             tv.selectedRanges = sel
             tv.undoManager?.removeAllActions()
             DispatchQueue.main.async {
-                context.coordinator.emitLineSegments()
+                context.coordinator.emitLineCenters()
             }
         }
 
@@ -307,7 +303,12 @@ struct CodeEditorNSTextView: NSViewRepresentable {
             parent.applyHighlighting(tv)
             updateCaretLine(tv)
             restoreTypingAttributes(tv)
-            DispatchQueue.main.async { [weak self] in self?.emitLineSegments() }
+            // Repaint the whole visible region: AppKit's incremental damage-rect
+            // calc mis-computes the shifted region with non-uniform line heights
+            // in this layer-backed (SwiftUI-hosted) text view, leaving glyph runs
+            // below an edit unrepainted ("invisible line"). Bounded by viewport.
+            tv.setNeedsDisplay(tv.visibleRect)
+            DispatchQueue.main.async { [weak self] in self?.emitLineCenters() }
         }
 
         func textViewDidChangeSelection(_ notification: Notification) {
@@ -387,7 +388,7 @@ struct CodeEditorNSTextView: NSViewRepresentable {
         @objc func frameChanged(_ notification: Notification) {
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
-                self.emitLineSegments()
+                self.emitLineCenters()
                 if let tv = self.textView {
                     self.updateActiveLineHighlight(tv, line: self.activeLine)
                 }
@@ -406,73 +407,77 @@ struct CodeEditorNSTextView: NSViewRepresentable {
             updateActiveLineHighlight(tv, line: line)
         }
 
-        // MARK: Line segments (wrap-aware)
+        // MARK: Line centers (layout-manager ground truth)
 
-        func emitLineSegments() {
+        func emitLineCenters() {
             guard let tv = textView else { return }
-            let segs = computeLineSegments(tv)
-            parent.onLineSegments?(segs)
+            parent.onLineCenters?(computeLineCenters(tv))
         }
 
-        private func computeLineSegments(_ tv: NSTextView) -> [Int] {
-            let logical = tv.string.components(separatedBy: "\n")
-            let logicalCount = max(logical.count, 1)
+        // Center Y (document space, incl. textContainerInset) of each logical
+        // line's FIRST visual fragment, read straight from the layout manager,
+        // so gutter numbers track real text height (CJK/emoji, wraps) without
+        // the cumulative-estimate drift.
+        private func computeLineCenters(_ tv: NSTextView) -> [CGFloat] {
+            let src          = tv.string as NSString
+            let inset        = tv.textContainerInset.height
+            let logicalCount = max(tv.string.components(separatedBy: "\n").count, 1)
 
-            guard let lm = tv.layoutManager, lm.numberOfGlyphs > 0 else {
-                return Array(repeating: 1, count: logicalCount)
+            guard let lm = tv.layoutManager, tv.textContainer != nil else {
+                let lh = DesignTokens.lineHeight(for: parent.fontSize,
+                                                  fontName: parent.fontName,
+                                                  multiplier: parent.lineHeightMultiplier)
+                return (0..<logicalCount).map { inset + (CGFloat($0) + 0.5) * lh }
             }
 
-            let src = tv.string as NSString
-            var counts: [Int] = []
-            counts.reserveCapacity(logicalCount)
+            var centers: [CGFloat] = []
+            centers.reserveCapacity(logicalCount)
             var charIdx = 0
 
             while charIdx <= src.length {
                 let lineRange = src.lineRange(for: NSRange(location: charIdx, length: 0))
-                let glyphRange = lm.glyphRange(forCharacterRange: lineRange,
-                                                actualCharacterRange: nil)
-                var segs = 0
-                var g = glyphRange.location
-                let upper = glyphRange.upperBound
-                if upper == g {
-                    segs = 1
+
+                let rect: CGRect
+                if src.length == 0 || lineRange.location >= src.length {
+                    rect = lm.extraLineFragmentRect
                 } else {
-                    while g < upper {
-                        var eff = NSRange(location: 0, length: 0)
-                        _ = lm.lineFragmentRect(forGlyphAt: g, effectiveRange: &eff)
-                        segs += 1
-                        if eff.upperBound > g { g = eff.upperBound } else { break }
-                    }
+                    let glyphRange = lm.glyphRange(forCharacterRange: lineRange,
+                                                    actualCharacterRange: nil)
+                    let gi = min(glyphRange.location, max(0, lm.numberOfGlyphs - 1))
+                    rect = lm.numberOfGlyphs > 0
+                        ? lm.lineFragmentRect(forGlyphAt: gi, effectiveRange: nil)
+                        : lm.extraLineFragmentRect
                 }
-                counts.append(max(segs, 1))
+                centers.append(rect.minY + rect.height / 2 + inset)
+
                 if lineRange.upperBound >= src.length { break }
                 charIdx = lineRange.upperBound
             }
-            if logical.count > counts.count {
-                counts.append(contentsOf: Array(repeating: 1,
-                                                count: logical.count - counts.count))
+
+            while centers.count < logicalCount {
+                let extra = lm.extraLineFragmentRect
+                centers.append(extra.minY + extra.height / 2 + inset)
             }
-            return counts
+            return centers
         }
 
         // MARK: Active-line highlight (wrap-aware)
 
+        // Painted in ActiveLineTextView.drawBackground — no CALayer, so the
+        // text view stays non-layer-backed and repaints text shifted by edits
+        // (the "invisible line on Return" bug).
         private func updateActiveLineHighlight(_ tv: NSTextView, line: Int) {
-            tv.wantsLayer = true
-            tv.layer?.sublayers?.removeAll(where: { $0.name == "activeLineHL" })
+            guard let alt = tv as? ActiveLineTextView else { return }
 
             let frame = activeLineRect(tv, line: line)
-            guard frame.height > 0 else { return }
+            let prev  = alt.activeLineRect
 
-            let hl = CALayer()
-            hl.name = "activeLineHL"
-            hl.frame = frame
-            hl.backgroundColor = (tv.effectiveAppearance.name == .darkAqua
+            alt.activeLineColor = (tv.effectiveAppearance.name == .darkAqua
                 ? NSColor.white.withAlphaComponent(0.04)
-                : NSColor.black.withAlphaComponent(0.035)).cgColor
-            tv.layer?.insertSublayer(hl, at: 0)
-
-            parent.onActiveLineDocY?(frame.origin.y)
+                : NSColor.black.withAlphaComponent(0.035))
+            alt.activeLineRect = frame.height > 0 ? frame : .zero
+            if prev.height > 0 { tv.setNeedsDisplay(prev) }
+            if frame.height > 0 { tv.setNeedsDisplay(frame) }
         }
 
         private func activeLineRect(_ tv: NSTextView, line: Int) -> CGRect {

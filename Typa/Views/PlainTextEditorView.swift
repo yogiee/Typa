@@ -7,10 +7,13 @@ struct PlainTextEditorView: View {
 
     let file: FileItem
 
-    @State private var activeLine:     Int      = 0
-    @State private var lineSegments:  [Int]    = [1]   // wraps per logical line
-    @State private var scrollOffset:  CGFloat  = 0
-    @State private var activeLineDocY: CGFloat = -1    // layout-manager Y; -1 = unset
+    @State private var activeLine:    Int       = 0
+    // Document-space center Y of each logical line's first visual fragment,
+    // emitted straight from the layout manager. Drawing numbers from these true
+    // positions (instead of a cumulative lineHeight estimate) keeps them aligned
+    // with content even when lines are taller than lineHeight (CJK, emoji).
+    @State private var lineCenters:   [CGFloat] = []
+    @State private var scrollOffset:  CGFloat   = 0
 
     private var fontSize:   CGFloat { CGFloat(appState.settings.fontSize) }
     private var fontName:   String  { appState.settings.fontName }
@@ -25,15 +28,13 @@ struct PlainTextEditorView: View {
         HStack(spacing: 0) {
             if appState.settings.showLineNumbers {
                 GutterView(
-                    lineSegments:   lineSegments,
-                    activeLine:     activeLine,
-                    scrollOffset:   scrollOffset,
-                    activeLineDocY: activeLineDocY,
-                    lineHeight:     lineHeight,
-                    topInset:       16,
-                    fontSize:       fontSize,
-                    accentColor:    appState.accentColor,
-                    colorScheme:    colorScheme
+                    lineCenters:  lineCenters,
+                    activeLine:   activeLine,
+                    scrollOffset: scrollOffset,
+                    lineHeight:   lineHeight,
+                    fontSize:     fontSize,
+                    accentColor:  appState.accentColor,
+                    colorScheme:  colorScheme
                 )
             }
             EditorNSTextView(
@@ -57,11 +58,8 @@ struct PlainTextEditorView: View {
                 onScrollChange: { offset in
                     scrollOffset = offset
                 },
-                onLineSegments: { segs in
-                    lineSegments = segs
-                },
-                onActiveLineDocY: { y in
-                    activeLineDocY = y
+                onLineCenters: { centers in
+                    lineCenters = centers
                 }
             )
         }
@@ -78,18 +76,14 @@ struct PlainTextEditorView: View {
 // Now we iterate the array once, skip rows above/below the viewport, and only
 // call context.resolve() for the ~30-50 visible rows.
 struct GutterView: View {
-    let lineSegments:   [Int]
+    // Document-space center Y of each logical line's first visual fragment,
+    // straight from the layout manager. Numbers are drawn at these exact
+    // positions so they track real text — including lines taller than
+    // lineHeight (CJK/emoji) and wrapped lines — with no cumulative drift.
+    let lineCenters:    [CGFloat]
     let activeLine:     Int
     let scrollOffset:   CGFloat
-    // Exact Y of the active line's top in NSTextView document coordinates.
-    // Derived from the layout manager via the same lineFragmentRect the
-    // active-line CALayer uses, so the number and highlight never drift apart
-    // even when lineSegments-based cumulative heights are slightly off.
-    // Negative sentinel (-1) means the value hasn't been set yet; falls back
-    // to the cumulative estimate in that case.
-    var activeLineDocY: CGFloat = -1   // -1 = sentinel, fall back to cumulative estimate
-    let lineHeight:     CGFloat
-    let topInset:       CGFloat
+    let lineHeight:     CGFloat   // only used as an off-screen cull margin
     let fontSize:       CGFloat
     let accentColor:    Color
     let colorScheme:    ColorScheme
@@ -97,7 +91,7 @@ struct GutterView: View {
     // Grows with the actual line count so numbers are never clipped.
     // Minimum 3 digits; expands to 4, 5, … as needed (log files, etc.).
     private var gutterWidth: CGFloat {
-        let digits = max(String(lineSegments.count).count, 3)
+        let digits = max(String(lineCenters.count).count, 3)
         let font = NSFont(name: "JetBrains Mono", size: max(fontSize - 2, 8))
             ?? NSFont.monospacedSystemFont(ofSize: max(fontSize - 2, 8), weight: .regular)
         let charW = ("0" as NSString).size(withAttributes: [.font: font]).width
@@ -108,36 +102,15 @@ struct GutterView: View {
     var body: some View {
         Canvas { context, size in
             let textRightX = size.width - 13
+            let margin = lineHeight   // cull rows comfortably outside the viewport
 
-            // Pre-compute the cumulative Y for the active line using the same
-            // lineSegments array that the rest of the drawing loop uses. Then
-            // compare it against the layout manager's exact Y (activeLineDocY)
-            // to get a drift value. Applying drift uniformly to every number
-            // keeps them in sequential order while shifting the whole column to
-            // match actual text positions — even when lineSegments has missed
-            // some wrapped lines and accumulated error.
-            var activeCumY: CGFloat = topInset - scrollOffset
-            let activeIdx = min(max(activeLine, 0), lineSegments.count)
-            for i in 0..<activeIdx {
-                activeCumY += CGFloat(max(lineSegments[i], 1)) * lineHeight
-            }
-            let drift: CGFloat = activeLineDocY >= 0
-                ? (activeLineDocY - scrollOffset - activeCumY)
-                : 0
+            for (i, center) in lineCenters.enumerated() {
+                let drawY = center - scrollOffset
 
-            var cumY: CGFloat = topInset - scrollOffset
-
-            for (i, segs) in lineSegments.enumerated() {
-                let rowHeight = CGFloat(max(segs, 1)) * lineHeight
-                let drawTop = cumY + drift
-
-                // Skip rows fully above the viewport — just advance the cursor
-                if drawTop + rowHeight <= 0 {
-                    cumY += rowHeight
-                    continue
-                }
-                // Stop once we've passed the bottom of the viewport
-                if drawTop >= size.height { break }
+                // Centers are monotonically increasing — skip rows above the
+                // viewport, stop once we've passed the bottom.
+                if drawY + margin < 0 { continue }
+                if drawY - margin > size.height { break }
 
                 let isActive = (i == activeLine)
                 let label = Text(verbatim: String(i + 1))
@@ -146,10 +119,8 @@ struct GutterView: View {
 
                 let resolved = context.resolve(label)
                 context.draw(resolved,
-                             at: CGPoint(x: textRightX, y: drawTop + lineHeight / 2),
+                             at: CGPoint(x: textRightX, y: drawY),
                              anchor: UnitPoint(x: 1.0, y: 0.5))
-
-                cumY += rowHeight
             }
         }
         .allowsHitTesting(false)
@@ -182,6 +153,26 @@ private struct StyleStamp: Equatable {
     }
 }
 
+// MARK: - Active-line-aware text view
+
+// Paints the active-line highlight in drawBackground(in:) instead of a CALayer.
+// A CALayer highlight requires wantsLayer = true, which makes the text view
+// layer-backed; layer-backed NSTextViews fail to repaint runs that shift Y on
+// an edit (e.g. text below a newly inserted newline) until the next edit dirties
+// that region — the "invisible line on Return" bug. Drawing in drawBackground
+// keeps the view non-layer-backed so normal incremental redraw works.
+final class ActiveLineTextView: NSTextView {
+    var activeLineRect: CGRect = .zero
+    var activeLineColor: NSColor = .clear
+
+    override func drawBackground(in rect: NSRect) {
+        super.drawBackground(in: rect)
+        guard activeLineRect.height > 0, activeLineRect.intersects(rect) else { return }
+        activeLineColor.setFill()
+        activeLineRect.fill()
+    }
+}
+
 // MARK: - NSTextView wrapper
 
 struct EditorNSTextView: NSViewRepresentable {
@@ -206,11 +197,9 @@ struct EditorNSTextView: NSViewRepresentable {
     var onCaretLineChange:  ((Int, Int) -> Void)? = nil
     var onScrollChange:     ((CGFloat) -> Void)?  = nil
     var onScrollFraction:   ((CGFloat) -> Void)?  = nil
-    var onLineSegments:     (([Int]) -> Void)?    = nil
-    // Exact Y of the active line's top in NSTextView document coordinates,
-    // derived from lineFragmentRect. Used by GutterView so the active line
-    // number and the CALayer highlight always draw from the same source.
-    var onActiveLineDocY:   ((CGFloat) -> Void)?  = nil
+    // Document-space center Y of each logical line's first visual fragment.
+    // GutterView draws the line numbers at these exact positions.
+    var onLineCenters:      (([CGFloat]) -> Void)? = nil
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -221,7 +210,7 @@ struct EditorNSTextView: NSViewRepresentable {
         scrollView.autohidesScrollers    = true
         scrollView.drawsBackground       = false
 
-        let tv = NSTextView()
+        let tv = ActiveLineTextView()
         tv.delegate        = context.coordinator
         tv.isEditable      = isEditable
         tv.isSelectable    = true
@@ -259,7 +248,7 @@ struct EditorNSTextView: NSViewRepresentable {
 
         // Initial line-segment emission once layout has settled
         DispatchQueue.main.async {
-            context.coordinator.emitLineSegments()
+            context.coordinator.emitLineCenters()
         }
 
         return scrollView
@@ -278,7 +267,7 @@ struct EditorNSTextView: NSViewRepresentable {
             tv.undoManager?.removeAllActions()
             // Layout needs to settle before line-segment counts are accurate.
             DispatchQueue.main.async {
-                context.coordinator.emitLineSegments()
+                context.coordinator.emitLineCenters()
             }
         }
 
@@ -448,7 +437,15 @@ struct EditorNSTextView: NSViewRepresentable {
             if parent.text != tv.string { parent.text = tv.string }
             updateCaretLine(tv)
             restoreTypingAttributes(tv)
-            DispatchQueue.main.async { [weak self] in self?.emitLineSegments() }
+            // SwiftUI hosts this NSTextView in a layer-backed tree, and AppKit's
+            // incremental damage-rect calc mis-computes the shifted region when
+            // line heights are non-uniform (e.g. inserting a Latin-height empty
+            // line above a taller CJK line) — leaving glyph runs below the edit
+            // unrepainted ("invisible line"). Repaint the whole visible region so
+            // every on-screen glyph is redrawn at its current Y. Bounded by the
+            // viewport, so cheap.
+            tv.setNeedsDisplay(tv.visibleRect)
+            DispatchQueue.main.async { [weak self] in self?.emitLineCenters() }
         }
 
         func textViewDidChangeSelection(_ notification: Notification) {
@@ -667,7 +664,7 @@ struct EditorNSTextView: NSViewRepresentable {
         @objc func frameChanged(_ notification: Notification) {
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
-                self.emitLineSegments()
+                self.emitLineCenters()
                 // Refresh the active-line highlight so it tracks the new
                 // line height immediately (e.g. when multiplier changes).
                 if let tv = self.textView {
@@ -691,81 +688,81 @@ struct EditorNSTextView: NSViewRepresentable {
             updateActiveLineHighlight(tv, line: line)
         }
 
-        // MARK: Line segments (wrap-aware)
+        // MARK: Line centers (layout-manager ground truth)
 
-        func emitLineSegments() {
+        func emitLineCenters() {
             guard let tv = textView else { return }
-            let segs = computeLineSegments(tv)
-            parent.onLineSegments?(segs)
+            parent.onLineCenters?(computeLineCenters(tv))
         }
 
-        private func computeLineSegments(_ tv: NSTextView) -> [Int] {
-            let logical = tv.string.components(separatedBy: "\n")
-            let logicalCount = max(logical.count, 1)
+        // Center Y (document space, incl. textContainerInset) of each logical
+        // line's FIRST visual fragment, read straight from the layout manager.
+        // The gutter draws number i at centers[i], so numbers track real text
+        // regardless of per-line height (CJK/emoji taller than lineHeight) or
+        // wrapping — eliminating the cumulative-estimate drift.
+        private func computeLineCenters(_ tv: NSTextView) -> [CGFloat] {
+            let src          = tv.string as NSString
+            let inset        = tv.textContainerInset.height
+            let logicalCount = max(tv.string.components(separatedBy: "\n").count, 1)
 
-            guard let lm = tv.layoutManager, lm.numberOfGlyphs > 0 else {
-                return Array(repeating: 1, count: logicalCount)
+            guard let lm = tv.layoutManager, tv.textContainer != nil else {
+                let lh = DesignTokens.lineHeight(for: parent.fontSize,
+                                                  fontName: parent.fontName,
+                                                  multiplier: parent.lineHeightMultiplier)
+                return (0..<logicalCount).map { inset + (CGFloat($0) + 0.5) * lh }
             }
 
-            let src = tv.string as NSString
-            var counts: [Int] = []
-            counts.reserveCapacity(logicalCount)
+            var centers: [CGFloat] = []
+            centers.reserveCapacity(logicalCount)
             var charIdx = 0
 
             while charIdx <= src.length {
                 let lineRange = src.lineRange(for: NSRange(location: charIdx, length: 0))
-                let glyphRange = lm.glyphRange(forCharacterRange: lineRange,
-                                                actualCharacterRange: nil)
 
-                var segs = 0
-                var g = glyphRange.location
-                let upper = glyphRange.upperBound
-                if upper == g {
-                    segs = 1   // empty line still occupies one visual line
+                let rect: CGRect
+                if src.length == 0 || lineRange.location >= src.length {
+                    // Empty document or the phantom empty line after a trailing
+                    // newline — neither has glyphs; use the extra line fragment.
+                    rect = lm.extraLineFragmentRect
                 } else {
-                    while g < upper {
-                        var eff = NSRange(location: 0, length: 0)
-                        _ = lm.lineFragmentRect(forGlyphAt: g, effectiveRange: &eff)
-                        segs += 1
-                        if eff.upperBound > g { g = eff.upperBound } else { break }
-                    }
+                    let glyphRange = lm.glyphRange(forCharacterRange: lineRange,
+                                                    actualCharacterRange: nil)
+                    let gi = min(glyphRange.location, max(0, lm.numberOfGlyphs - 1))
+                    rect = lm.numberOfGlyphs > 0
+                        ? lm.lineFragmentRect(forGlyphAt: gi, effectiveRange: nil)
+                        : lm.extraLineFragmentRect
                 }
-                counts.append(max(segs, 1))
+                centers.append(rect.minY + rect.height / 2 + inset)
 
                 if lineRange.upperBound >= src.length { break }
                 charIdx = lineRange.upperBound
             }
 
-            // If the string ends with a trailing newline, lineRange iteration above
-            // doesn't append a row for the final empty line — add it.
-            if logical.count > counts.count {
-                counts.append(contentsOf: Array(repeating: 1,
-                                                count: logical.count - counts.count))
+            // String ends with a newline: the loop appended a center for the line
+            // holding the final "\n" but not the phantom empty line after it.
+            while centers.count < logicalCount {
+                let extra = lm.extraLineFragmentRect
+                centers.append(extra.minY + extra.height / 2 + inset)
             }
-            return counts
+            return centers
         }
 
         // MARK: Active-line highlight (wrap-aware)
 
         private func updateActiveLineHighlight(_ tv: NSTextView, line: Int) {
-            tv.wantsLayer = true
-            tv.layer?.sublayers?.removeAll(where: { $0.name == "activeLineHL" })
+            guard let alt = tv as? ActiveLineTextView else { return }
 
             let frame = activeLineRect(tv, line: line)
-            guard frame.height > 0 else { return }
+            let prev  = alt.activeLineRect
 
-            let hl = CALayer()
-            hl.name = "activeLineHL"
-            hl.frame = frame
-            hl.backgroundColor = (tv.effectiveAppearance.name == .darkAqua
+            alt.activeLineColor = (tv.effectiveAppearance.name == .darkAqua
                 ? NSColor.white.withAlphaComponent(0.04)
-                : NSColor.black.withAlphaComponent(0.035)).cgColor
-            tv.layer?.insertSublayer(hl, at: 0)
-
-            // Emit the exact document-space Y so GutterView can draw the active
-            // line number at the identical position rather than relying on the
-            // lineSegments cumulative estimate (which drifts on wrapped lines).
-            parent.onActiveLineDocY?(frame.origin.y)
+                : NSColor.black.withAlphaComponent(0.035))
+            alt.activeLineRect = frame.height > 0 ? frame : .zero
+            // Repaint both the old and new highlight rows so the previous one
+            // is cleared and the new one drawn.
+            if prev.height > 0 { tv.setNeedsDisplay(prev) }
+            if frame.height > 0 { tv.setNeedsDisplay(frame) }
         }
 
         private func activeLineRect(_ tv: NSTextView, line: Int) -> CGRect {
