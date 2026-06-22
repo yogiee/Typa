@@ -143,13 +143,62 @@ struct StatusBarView: View {
 
     // MARK: Toggles
 
+    @ViewBuilder
     private var toggleSection: some View {
         HStack(spacing: 4) {
-            statusToggle("focus", isOn: appState.settings.focusMode) {
-                appState.settings.focusMode.toggle()
+            // Markdown has no active-line to focus; offer a per-file reading-width
+            // override here instead. Other kinds keep the focus toggle.
+            if appState.activeFile?.kind == .markdown {
+                readingWidthMenu
+            } else {
+                statusToggle("focus", isOn: appState.settings.focusMode) {
+                    appState.settings.focusMode.toggle()
+                }
             }
         }
         .padding(.horizontal, 6)
+    }
+
+    @ViewBuilder
+    private var readingWidthMenu: some View {
+        if let file = appState.activeFile {
+            let overridden = file.readingWidthOverride != nil
+            let current    = appState.effectiveReadingWidth(for: file)
+            Menu {
+                ForEach(ReadingWidth.allCases, id: \.self) { w in
+                    Button {
+                        appState.setReadingWidthOverride(w, for: file.id)
+                    } label: {
+                        if w == current {
+                            Label(w.label, systemImage: "checkmark")
+                        } else {
+                            Text(w.label)
+                        }
+                    }
+                }
+                Divider()
+                Button("Use default (\(appState.settings.readingWidth.label))") {
+                    appState.setReadingWidthOverride(nil, for: file.id)
+                }
+                .disabled(!overridden)
+            } label: {
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(overridden ? appState.accentColor : DesignTokens.fgFaint(colorScheme))
+                        .frame(width: 5, height: 5)
+                    Text("width · \(current.label)")
+                        .font(DesignTokens.font(14))
+                        .foregroundStyle(overridden ? DesignTokens.fg(colorScheme)
+                                                    : DesignTokens.fgMute(colorScheme))
+                }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(overridden ? appState.accentColor.opacity(0.08) : Color.clear)
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+        }
     }
 
     private func statusToggle(_ label: String, isOn: Bool, action: @escaping () -> Void) -> some View {
