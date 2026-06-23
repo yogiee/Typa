@@ -49,6 +49,18 @@ struct MarkdownWebView: NSViewRepresentable {
         let cfg = WKWebViewConfiguration()
         cfg.userContentController.add(context.coordinator, name: "tpScroll")
 
+        // Inject the bundled mermaid library at document-start so `window.mermaid`
+        // is defined before the page's inline script (which calls initialize/run).
+        // Injected here rather than inlined into every HTML string so the ~3MB
+        // source ships once per WebView, not on every live-preview body swap.
+        if let js = Self.mermaidJS {
+            cfg.userContentController.addUserScript(
+                WKUserScript(source: js,
+                             injectionTime: .atDocumentStart,
+                             forMainFrameOnly: true)
+            )
+        }
+
         let wv = WKWebView(frame: .zero, configuration: cfg)
         wv.setValue(false, forKey: "drawsBackground") // honor body bg from CSS
         wv.navigationDelegate = context.coordinator
@@ -144,6 +156,14 @@ struct MarkdownWebView: NSViewRepresentable {
     private var cssKey: String {
         "\(colorScheme)|\(fontSize)|\(lineLength.map(String.init) ?? "full")|\(accentColor.hexString)"
     }
+
+    /// Bundled mermaid.min.js source, read once and cached for the process.
+    /// nil if the resource is missing (mermaid blocks then stay as code text).
+    private static let mermaidJS: String? = {
+        guard let url = Bundle.main.url(forResource: "mermaid.min", withExtension: "js"),
+              let js  = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+        return js
+    }()
 
     // MARK: - Coordinator
 

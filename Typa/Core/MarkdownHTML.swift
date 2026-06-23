@@ -19,6 +19,10 @@ extension MarkdownEngine {
                                   lineLength: lineLength,
                                   accentHex: accentHex,
                                   themeName: themeName)
+        // Mermaid follows the app color scheme. The library itself is injected
+        // once per WebView via a WKUserScript (see MarkdownWebView), so by the
+        // time this inline script runs `window.mermaid` is already defined.
+        let mermaidTheme = colorScheme == .dark ? "dark" : "default"
         return """
         <!doctype html>
         <html>
@@ -32,14 +36,34 @@ extension MarkdownEngine {
         \(bodyHTML)
         </article>
         <script>
+        // Mermaid diagram rendering. The library is injected separately via a
+        // WKUserScript at document-start, so `window.mermaid` exists here.
+        // initialize() is called once; tpRenderMermaid() converts any unprocessed
+        // <pre class="mermaid"> blocks to SVG and is safe to call repeatedly
+        // (mermaid tags rendered nodes with data-processed).
+        if (window.mermaid) {
+            window.mermaid.initialize({
+                startOnLoad: false,
+                securityLevel: 'strict',
+                theme: '\(mermaidTheme)'
+            });
+        }
+        window.tpRenderMermaid = function() {
+            if (!window.mermaid) return;
+            try {
+                window.mermaid.run({ querySelector: '.mermaid', suppressErrors: true });
+            } catch (e) { /* invalid diagram — leave the source visible */ }
+        };
         // Live-update helper — replaces the body markup without a navigation.
-        // Re-applies any active find highlights after the swap.
+        // Re-applies any active find highlights after the swap, then re-renders
+        // any mermaid diagrams in the freshly-swapped markup.
         window._tpFind = { q: '', idx: -1 };
         window.tpReplaceBody = function(html) {
             const el = document.querySelector('.markdown-body');
             if (el) {
                 el.innerHTML = html;
                 if (window._tpFind.q) window.tpHighlight(window._tpFind.q, window._tpFind.idx);
+                window.tpRenderMermaid();
             }
         };
         // Find highlight helper. Called from Swift whenever the query or
@@ -97,6 +121,8 @@ extension MarkdownEngine {
                 window.webkit.messageHandlers.tpScroll.postMessage(f);
             }
         }, { passive: true });
+        // Render any mermaid diagrams present in the initial markup.
+        window.tpRenderMermaid();
         </script>
         </body>
         </html>
@@ -116,6 +142,15 @@ extension MarkdownEngine {
                              lineLength: lineLength,
                              accentHex: accentHex,
                              themeName: "default")
+        // Keep exported files small: rather than inline the ~3MB library, pull
+        // mermaid from a CDN so the browser renders the diagrams on open. Only
+        // emitted when the document actually contains a mermaid block.
+        let mermaidScript = containsMermaid(source) ? """
+        <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, securityLevel: 'strict' });
+        </script>
+        """ : ""
         return """
         <!doctype html>
         <html>
@@ -128,9 +163,18 @@ extension MarkdownEngine {
         <article class="markdown-body">
         \(bodyHTML)
         </article>
+        \(mermaidScript)
         </body>
         </html>
         """
+    }
+
+    /// True if the source contains at least one ```mermaid fenced block.
+    private static func containsMermaid(_ source: String) -> Bool {
+        parseBlocks(source).contains { block in
+            if case .code(let lang, _) = block { return lang.lowercased() == "mermaid" }
+            return false
+        }
     }
 
     /// Renders just the inner block markup, suitable for swapping into
@@ -152,6 +196,12 @@ extension MarkdownEngine {
             return "<p>\(renderInlineHTML(parseInline(text)))</p>"
 
         case .code(let lang, let body):
+            // Mermaid fences render as live diagrams (mermaid.js swaps the
+            // <pre class="mermaid"> for an SVG). The library reads textContent,
+            // so the escaped source decodes back to the original diagram markup.
+            if lang.lowercased() == "mermaid" {
+                return "<pre class=\"mermaid\">\(escapeHTML(body))</pre>"
+            }
             let langClass = lang.isEmpty ? "" : " class=\"language-\(escapeHTMLAttr(lang))\""
             // If our tokenizer recognizes the language, emit per-token spans
             // so the preview gets the same syntax highlighting as the editor.
@@ -412,6 +462,16 @@ extension MarkdownEngine {
             border-radius: 0;
             font-size: 1em;
         }
+        /* Mermaid diagrams: no code-block chrome; size to content, center, and
+           scroll horizontally if wider than the reading column (like tables). */
+        pre.mermaid {
+            background: transparent;
+            padding: 0;
+            margin: 0 0 1.2em;
+            text-align: center;
+            line-height: normal;
+        }
+        pre.mermaid svg { max-width: 100%; height: auto; }
         blockquote {
             margin: 0 0 1em;
             padding: 12px 16px;
